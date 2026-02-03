@@ -50,16 +50,19 @@ STOP_LOSS_PCT = 0.02
 FUTURES_CODE = 'CU'  # 沪铜期货代码
 HISTORICAL_DAYS = 300  # 获取历史数据天数
 
-# 基础路径
-BASE_DIR = Path(r'D:\期货数据\铜期货监控')
+# 基础路径（自动检测脚本所在目录）
+BASE_DIR = Path(__file__).parent
 LOGS_DIR = BASE_DIR / 'logs'
 CONFIG_DIR = BASE_DIR / 'config'
 
-# 数据路径（备用）
-BACKUP_DATA_PATH = r'D:\期货数据\沪铜4小时K线_20260203_130227.csv'
+# 数据路径（备用）- 相对路径
+BACKUP_DATA_PATH = BASE_DIR / 'data' / 'backup.csv'
 SIGNAL_LOG_PATH = LOGS_DIR / 'signal_log.json'
 TRACKING_PATH = LOGS_DIR / 'performance_tracking.csv'
 LOG_FILE = LOGS_DIR / 'strategy_monitor.log'
+
+# 确保日志目录存在
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # 设置日志
 logging.basicConfig(
