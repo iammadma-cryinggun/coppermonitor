@@ -309,19 +309,9 @@ def load_market_data():
 
     if df is not None and not df.empty:
         logger.info(f"[API] 成功获取 {len(df)} 条记录")
-        logger.info(f"[API] 数据范围: {df['date'].iloc[0]} ~ {df['date'].iloc[-1]}")
+        logger.info(f"[API] 数据范围: {df['datetime'].iloc[0]} ~ {df['datetime'].iloc[-1]}")
 
-        # 标准化列名以匹配策略格式
-        df = df.rename(columns={
-            'date': 'datetime',
-            '开盘价': 'open',
-            '最高价': 'high',
-            '最低价': 'low',
-            '收盘价': 'close',
-            '成交量': 'volume',
-            '持仓量': 'hold'
-        })
-
+        # 新数据源已经是正确的列名格式 (datetime, open, high, low, close, volume, hold)
         # 确保datetime格式
         df['datetime'] = pd.to_datetime(df['datetime'])
 
