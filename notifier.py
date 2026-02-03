@@ -428,6 +428,14 @@ def load_config(config_path: str = None) -> Optional[Dict[str, str]]:
     token = os.environ.get('TELEGRAM_BOT_TOKEN')
     chat_id = os.environ.get('TELEGRAM_CHAT_ID')
 
+    # 调试：输出环境变量状态
+    logger.info(f"[调试] TELEGRAM_BOT_TOKEN 存在: {bool(token)}")
+    logger.info(f"[调试] TELEGRAM_CHAT_ID 存在: {bool(chat_id)}")
+    if token:
+        logger.info(f"[调试] BOT_TOKEN 长度: {len(token)}")
+    if chat_id:
+        logger.info(f"[调试] CHAT_ID 值: {chat_id}")
+
     if token and chat_id:
         logger.info("[配置] 使用环境变量配置")
         return {'token': token, 'chat_id': chat_id}
