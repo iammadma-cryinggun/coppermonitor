@@ -31,20 +31,20 @@ from notifier import get_notifier
 # 配置
 # ==========================================
 
-# 策略参数（使用策略B实盘版的最优参数）
-EMA_FAST = 5
-EMA_SLOW = 15
+# 策略参数（网格优化后的最优参数）
+EMA_FAST = 3          # 快速EMA (原5)
+EMA_SLOW = 20         # 慢速EMA (原15)
 MACD_FAST = 12
 MACD_SLOW = 26
 MACD_SIGNAL = 9
 RSI_PERIOD = 14
-RSI_FILTER = 45
-RATIO_TRIGGER = 1.15
+RSI_FILTER = 40       # RSI过滤 (原45)
+RATIO_TRIGGER = 1.2   # Ratio阈值 (原1.15)
 STC_LENGTH = 10
 STC_FAST = 23
 STC_SLOW = 50
 STC_SELL_ZONE = 85
-STOP_LOSS_PCT = 0.02
+STOP_LOSS_PCT = 0.015 # 止损1.5% (原2%)
 
 # 期货配置
 FUTURES_CODE = 'CU'  # 沪铜期货代码
