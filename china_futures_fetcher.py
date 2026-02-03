@@ -89,7 +89,11 @@ class ChinaFuturesFetcher:
         return self.FUTURES_MAPPING.get(code.upper())
 
     def get_historical_data(self, code: str, days: int = 252) -> Optional[pd.DataFrame]:
-        """获取期货历史行情数据"""
+        """
+        获取期货历史行情数据 (4小时K线)
+
+        从 AkShare 获取60分钟数据，然后重采样成4小时K线
+        """
         code = code.upper()
         info = self.get_futures_info(code)
 
@@ -98,62 +102,95 @@ class ChinaFuturesFetcher:
             return None
 
         # 检查缓存
-        cache_key = f"{code}_{days}"
+        cache_key = f"{code}_4h"
         if cache_key in self._cache:
             cached_data, cached_time = self._cache[cache_key]
             if datetime.now() - cached_time < self._cache_ttl:
-                logger.debug(f"[ChinaFutures] 使用缓存数据: {code}")
+                logger.debug(f"[ChinaFutures] 使用缓存数据: {code} (4小时K线)")
                 return cached_data
 
         try:
             import akshare as ak
 
-            logger.info(f"[ChinaFutures] 获取 {info['name']} ({code}) 历史数据...")
+            logger.info(f"[ChinaFutures] 获取 {info['name']} ({code}) 4小时K线数据...")
 
             sina_code = info['sina_code']
-            end_date = datetime.now().strftime('%Y%m%d')
-            start_date = (datetime.now() - timedelta(days=days)).strftime('%Y%m%d')
 
-            # 获取历史数据
-            df = ak.futures_main_sina(
-                symbol=sina_code,
-                start_date=start_date,
-                end_date=end_date
-            )
+            # 获取60分钟数据
+            df_60m = ak.futures_zh_minute_sina(symbol=sina_code, period='60')
 
-            if df is None or df.empty:
-                logger.warning(f"[ChinaFutures] {code} 数据为空")
+            if df_60m is None or df_60m.empty:
+                logger.warning(f"[ChinaFutures] {code} 60分钟数据为空")
                 return None
 
+            # 转换datetime列
+            df_60m['datetime'] = pd.to_datetime(df_60m['datetime'])
+            df_60m = df_60m.set_index('datetime')
+
+            # 重采样成4小时K线
+            df_4h = df_60m.resample('4h').agg({
+                'open': 'first',
+                'high': 'max',
+                'low': 'min',
+                'close': 'last',
+                'volume': 'sum',
+                'hold': 'last'
+            })
+            df_4h = df_4h.dropna()
+
+            # 重置索引
+            df_4h = df_4h.reset_index()
+
             # 标准化列名
-            df = self._standardize_columns(df)
+            df_4h = self._standardize_columns(df_4h)
 
             # 缓存数据
-            self._cache[cache_key] = (df, datetime.now())
+            self._cache[cache_key] = (df_4h, datetime.now())
 
-            logger.info(f"[ChinaFutures] 获取成功 {code}: {len(df)} 条记录")
-            return df
+            logger.info(f"[ChinaFutures] 获取成功 {code}: {len(df_4h)} 条4小时K线记录")
+            logger.info(f"[ChinaFutures] 数据范围: {df_4h['datetime'].iloc[0]} ~ {df_4h['datetime'].iloc[-1]}")
+            return df_4h
 
         except Exception as e:
             logger.error(f"[ChinaFutures] 获取 {code} 数据失败: {e}")
             return None
 
     def _standardize_columns(self, df: pd.DataFrame) -> pd.DataFrame:
-        """标准化列名"""
+        """
+        标准化列名
+
+        支持两种数据格式:
+        1. 日线数据 (futures_main_sina): 日期, 开盘价, 最高价, 最低价, 收盘价...
+        2. 4小时K线 (重采样后): datetime, open, high, low, close, volume, hold
+        """
         column_mapping = {
+            # 日线数据列名
             '日期': 'date',
             '开盘价': 'open',
             '最高价': 'high',
             '最低价': 'low',
             '收盘价': 'close',
             '成交量': 'volume',
-            '持仓量': 'open_interest',
+            '持仓量': 'hold',  # 改为 hold 以匹配分钟数据
             '动态结算价': 'settlement',
             '涨跌': 'change',
             '涨跌幅': 'pct_change',
+            # 英文列名（已经是对的就不用改）
+            # 'datetime': 'datetime',
+            # 'open': 'open',
+            # 'high': 'high',
+            # 'low': 'low',
+            # 'close': 'close',
+            # 'volume': 'volume',
+            # 'hold': 'hold',
         }
 
         df = df.rename(columns=column_mapping)
+
+        # 确保 datetime 列存在（如果已有则不处理）
+        if 'datetime' not in df.columns and 'date' in df.columns:
+            df['datetime'] = df['date']
+
         return df
 
     def calculate_historical_volatility(self, code: str, window: int = 20) -> Optional[float]:
