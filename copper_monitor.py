@@ -253,11 +253,34 @@ def save_signal_log(signal, status='pending', actual_price=None, actual_action=N
     else:
         logs = []
 
-    # 添加新信号
+    # 添加新信号（处理不可序列化的类型）
+    def make_json_serializable(obj):
+        """将对象转换为JSON可序列化的格式"""
+        if isinstance(obj, bool):
+            return bool(obj)
+        elif isinstance(obj, (int, float, str, type(None))):
+            return obj
+        elif isinstance(obj, dict):
+            return {k: make_json_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [make_json_serializable(item) for item in obj]
+        elif isinstance(obj, (pd.Timestamp, datetime)):
+            return obj.isoformat()
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        else:
+            return str(obj)
+
+    signal_serializable = make_json_serializable(signal)
+
     log_entry = {
         'timestamp': datetime.now().isoformat(),
         'signal_datetime': signal['datetime'],
-        'signal': signal,
+        'signal': signal_serializable,
         'status': status,
         'actual_price': actual_price,
         'actual_action': actual_action,
