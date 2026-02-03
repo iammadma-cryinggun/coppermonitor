@@ -1,7 +1,10 @@
+# Zeabur配置文件
+# 注意：如果有Dockerfile，Zeabur会优先使用Dockerfile
+
 services:
   - name: copper-monitor
     type: worker  # worker类型，适合后台任务
-    runtime: python@3.10
+    dockerfile: Dockerfile  # 明确指定使用Dockerfile
 
     # 环境变量配置
     env:
@@ -17,19 +20,7 @@ services:
         value: Asia/Shanghai
         description: 时区设置
 
-    # 构建配置
-    buildCommand: |
-      pip install --upgrade pip
-      pip install -r requirements.txt
-
-    # 启动命令
-    startCommand: python run_continuous.py
-
-    # 定时任务（每4小时运行一次）
-    # 如果Zeabur不支持cron，脚本会自动循环运行
-    cron: "0 */4 * * *"
-
-    # 资源限制（根据需要调整）
+    # 资源限制
     resources:
       memory: 512Mi
       cpu: 0.5
