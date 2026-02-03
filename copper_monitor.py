@@ -240,8 +240,16 @@ def save_signal_log(signal, status='pending', actual_price=None, actual_action=N
 
     # 读取现有日志
     if log_path.exists():
-        with open(log_path, 'r', encoding='utf-8') as f:
-            logs = json.load(f)
+        try:
+            with open(log_path, 'r', encoding='utf-8') as f:
+                logs = json.load(f)
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"[日志] 现有日志文件损坏，将创建新文件: {e}")
+            # 备份损坏的文件
+            backup_path = log_path.with_suffix('.json.bak')
+            log_path.rename(backup_path)
+            logger.info(f"[日志] 已备份损坏文件到: {backup_path}")
+            logs = []
     else:
         logs = []
 
