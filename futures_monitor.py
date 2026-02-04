@@ -466,8 +466,8 @@ def update_position(future_name: str, signal: dict, positions: Dict) -> Dict:
                 'signal_id': None
             }
 
-            # 记录交易
-            log_trade(future_name, 'sell', signal, pnl_pct)
+            # 记录交易（传递实际平仓价格）
+            log_trade(future_name, 'sell', signal, pnl_pct, exit_price)
 
     else:
         # 当前无持仓，检查是否需要开仓
@@ -490,8 +490,17 @@ def update_position(future_name: str, signal: dict, positions: Dict) -> Dict:
     return positions
 
 
-def log_trade(future_name: str, action: str, signal: dict, pnl_pct: float):
-    """记录交易到日志"""
+def log_trade(future_name: str, action: str, signal: dict, pnl_pct: float, actual_price: float = None):
+    """
+    记录交易到日志
+
+    Args:
+        future_name: 品种名称
+        action: 'buy' or 'sell'
+        signal: 信号字典
+        pnl_pct: 盈亏百分比（仅平仓时）
+        actual_price: 实际交易价格（止损平仓时使用市场价）
+    """
     log_path = Path(SIGNAL_LOG_FILE)
     log_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -504,15 +513,19 @@ def log_trade(future_name: str, action: str, signal: dict, pnl_pct: float):
     else:
         logs = []
 
+    # 确定记录的价格
+    trade_price = actual_price if actual_price is not None else signal['price']
+
     trade_entry = {
         'timestamp': datetime.now().isoformat(),
         'future': future_name,
         'action': action,  # 'buy' or 'sell'
         'signal_datetime': signal['datetime'],
-        'price': signal['price'],
+        'price': trade_price,  # 实际交易价格
         'signal_type': signal.get('signal_type', 'unknown'),
         'pnl_pct': pnl_pct if action == 'sell' else None,
         'stop_loss': signal.get('stop_loss'),
+        'stop_loss_price': signal.get('stop_loss_price'),  # 止损价（止损平仓时）
         'indicators': signal['indicators']
     }
 
