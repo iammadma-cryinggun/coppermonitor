@@ -361,6 +361,8 @@ def check_signals(df, params, future_name):
         'future': future_name,
         'datetime': str(latest['datetime']),
         'price': float(latest['close']),
+        'low': float(latest['low']),  # 最低价，用于止损检查
+        'high': float(latest['high']),  # 最高价，记录完整信息
         'indicators': {
             'ema_fast': float(latest['ema_fast']),
             'ema_slow': float(latest['ema_slow']),
@@ -443,10 +445,16 @@ def update_position(future_name: str, signal: dict, positions: Dict) -> Dict:
 
             # 计算盈亏（百分比）
             entry_price = position['entry_price']
-            current_price = signal['price']
-            pnl_pct = (current_price - entry_price) / entry_price * 100
+            # 使用实际平仓价格（止损时使用市场价）
+            exit_price = signal.get('actual_exit_price', signal['price'])
+            pnl_pct = (exit_price - entry_price) / entry_price * 100
 
-            logger.info(f"[{future_name}] 平仓: 入场{entry_price:.2f} → 出场{current_price:.2f} | 盈亏{pnl_pct:+.2f}%")
+            # 止损时额外记录止损价信息
+            if signal['reason']['sell'] == 'stop_loss':
+                stop_loss_price = signal.get('stop_loss_price', position['stop_loss'])
+                logger.info(f"[{future_name}] 平仓: 入场{entry_price:.2f} → 止损价{stop_loss_price:.2f} → 实际出场{exit_price:.2f} | 盈亏{pnl_pct:+.2f}%")
+            else:
+                logger.info(f"[{future_name}] 平仓: 入场{entry_price:.2f} → 出场{exit_price:.2f} | 盈亏{pnl_pct:+.2f}%")
 
             # 清空持仓
             positions[future_name] = {
@@ -611,12 +619,20 @@ def monitor_single_future(future_name: str, config: dict, positions: Dict) -> Di
         current_pnl_pct = (signal['price'] - position['entry_price']) / position['entry_price'] * 100
         logger.info(f"[{future_name}] 当前盈亏: {current_pnl_pct:+.2f}%")
 
-        # 检查止损
-        if signal['price'] <= position['stop_loss']:
-            logger.warning(f"[{future_name}] 止损触发! 价格 {signal['price']:.2f} <= 止损 {position['stop_loss']:.2f}")
+        # 检查止损（实盘逻辑：使用最低价检查是否触及止损，按市场价平仓）
+        if signal['low'] <= position['stop_loss']:
+            # 止损已被触及（K线最低价触及止损价）
+            actual_exit_price = signal['price']  # 实盘按当前市场价平仓
+            logger.warning(f"[{future_name}] 止损触发! K线最低价 {signal['low']:.2f} <= 止损价 {position['stop_loss']:.2f}")
+            logger.warning(f"[{future_name}] 立即平仓: 止损价 {position['stop_loss']:.2f} → 市场价 {actual_exit_price:.2f}")
+
+            # 触发平仓信号
             signal['sell_signal'] = True
             signal['signal_type'] = 'stop_loss'
             signal['reason']['sell'] = 'stop_loss'
+            # 记录实际平仓价格（市场价）
+            signal['actual_exit_price'] = actual_exit_price
+            signal['stop_loss_price'] = position['stop_loss']
 
     else:
         logger.info(f"[{future_name}] 当前持仓: 否")
