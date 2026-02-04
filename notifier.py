@@ -114,12 +114,15 @@ class TelegramNotifier:
         trend_strength = self._get_trend_strength(signal)
         signal_quality = self._get_signal_quality(signal)
 
+        # 提取数据时间用于显示
+        data_time = signal['datetime']
+
         message = f"""🟢 *买入信号 - {signal['signal_type'].upper()}*
 
 ━━━━━━━━━━━━━━━━━━━━
 
 *📊 市场状态*
-• 时间: `{signal['datetime']}`
+• 数据时间: `{data_time}`
 • 当前价格: `{entry_price:.0f}`
 • 趋势: `{signal['trend'].upper()}` ({signal['strength']})
 • 波动率: `{indicators['volatility']*100:.2f}%`
@@ -196,6 +199,9 @@ _数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %
             pnl_emoji = "❌"
             pnl_status = "亏损"
 
+        # 提取数据时间用于显示
+        data_time = signal['datetime']
+
         message = f"""🔴 *卖出信号 - {signal['signal_type'].upper()}*
 
 ━━━━━━━━━━━━━━━━━━━━
@@ -216,8 +222,8 @@ _数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %
 ━━━━━━━━━━━━━━━━━━━━
 
 *📊 当前市场状态*
-• 时间: `{signal['datetime']}`
-• 价格: `{signal['price']:.0f}`
+• 数据时间: `{data_time}`
+• 当前价格: `{signal['price']:.0f}`
 • 趋势: `{signal['trend'].upper()}` ({signal['strength']})
 • Ratio: `{signal['indicators']['ratio']:.3f}`
 • RSI: `{signal['indicators']['rsi']:.1f}`
@@ -242,13 +248,21 @@ _数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %
 
         indicators = signal['indicators']
 
+        # 提取数据时间
+        data_time = signal['datetime']
+        if isinstance(data_time, str):
+            # 从字符串中提取时间部分 (例如 "2026-02-04 20:00:00" -> "20:00")
+            time_part = data_time.split()[-1][:5] if ' ' in data_time else data_time[:5]
+        else:
+            time_part = data_time.strftime('%H:%M')
+
         message = f"""⚪ *市场监控更新*
 
 ━━━━━━━━━━━━━━━━━━━━
 
 *📊 当前市场状态*
-• 时间: `{signal['datetime']}`
-• 价格: `{signal['price']:.0f}`
+• 数据时间: `{data_time}`
+• 当前价格: `{signal['price']:.0f}`
 • 趋势: `{signal['trend'].upper()}` ({signal['strength']})
 • 波动率: `{indicators['volatility']*100:.2f}%`
 

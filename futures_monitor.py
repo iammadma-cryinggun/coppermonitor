@@ -8,7 +8,7 @@
 1. 同时监控10个期货品种
 2. 每个品种使用独立的最优参数
 3. 独立的持仓状态管理
-4. 每4小时整点运行（0:00, 4:00, 8:00, 12:00, 16:00, 20:00）
+4. 每4小时K线收盘后30分钟运行（0:30, 8:30, 12:30, 20:30），确保数据已更新
 5. 统一的信号推送和日志记录
 6. 不记录具体金额，只记录持仓状态
 
@@ -867,10 +867,18 @@ def send_telegram_report(all_signals, positions, buy_signals, sell_signals, acti
     if not telegram_notifier:
         return False
 
+    # 获取数据源时间戳（用于诊断数据是否更新）
+    data_times = []
+    for future_name, signal in all_signals.items():
+        if 'datetime' in signal and signal['datetime']:
+            data_times.append(signal['datetime'])
+    data_time_str = data_times[0] if data_times else "N/A"
+
     # 构建报告
     report_lines = [
         "📊 *期货多品种监控报告*",
-        f"🕐 时间: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        f"🕐 报告时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"📡 数据时间: {data_time_str}",  # 显示数据源时间，用于诊断数据是否更新
         "",
         f"📈 监控品种: {len(TOP10_FUTURES_CONFIG)}个",
         f"💼 当前持仓: {len(active_positions)}个",
@@ -897,19 +905,26 @@ def send_telegram_report(all_signals, positions, buy_signals, sell_signals, acti
         signal = all_signals.get(future_name, {})
         position = positions.get(future_name, {})
 
+        # 获取价格
+        price = signal.get('price', 0)
+        if price > 0:
+            price_str = f"{price:.0f}"
+        else:
+            price_str = "N/A"
+
         if 'error' in signal:
             status = "❌ 数据错误"
         elif position.get('holding'):
             entry_price = position['entry_price']
             pnl_pct = (signal['price'] - entry_price) / entry_price * 100
-            status = f"📌 持仓 | 盈亏{pnl_pct:+.1f}%"
+            status = f"📌 持仓 {price_str} | 盈亏{pnl_pct:+.1f}%"
         elif signal.get('buy_signal'):
-            status = f"🟢 {signal['signal_type']}"
+            status = f"🟢 {signal['signal_type']} @ {price_str}"
         elif signal.get('sell_signal'):
-            status = f"🔴 {signal['signal_type']}"
+            status = f"🔴 {signal['signal_type']} @ {price_str}"
         else:
             trend_icon = "📈" if signal.get('trend') == 'up' else "📉"
-            status = f"{trend_icon} {signal.get('strength', 'unknown')}"
+            status = f"{trend_icon} {price_str} | {signal.get('strength', 'unknown')}"
 
         report_lines.append(f"   {future_name}: {status}")
 
@@ -927,16 +942,32 @@ def send_telegram_report(all_signals, positions, buy_signals, sell_signals, acti
 # ==========================================
 
 def get_wait_seconds():
-    """计算到下一个4小时整点的等待时间"""
+    """计算到下一个4小时K线整点的等待时间
+
+    实际4小时K线时间点: 00:00, 08:00, 12:00, 20:00
+    (注意: 没有04:00和16:00，这是因为数据源从60分钟重采样导致)
+
+    为了确保K线已收盘，在整点后30分钟运行
+    """
     now = datetime.now()
     hour = now.hour
 
-    # 计算4小时整点
-    next_hour = ((hour // RUN_INTERVAL_HOURS) + 1) * RUN_INTERVAL_HOURS
-    if next_hour >= 24:
+    # 4小时K线的实际时间点: 0, 8, 12, 20
+    valid_hours = [0, 8, 12, 20]
+
+    # 找到下一个有效的运行时间
+    next_hour = None
+    for valid_hour in valid_hours:
+        if valid_hour > hour:
+            next_hour = valid_hour
+            break
+
+    # 如果没找到（已过20:00），下一个是0:00（次日）
+    if next_hour is None:
         next_hour = 0
 
-    next_time = now.replace(hour=next_hour, minute=0, second=0, microsecond=0)
+    # 在整点后30分钟运行，确保K线已收盘
+    next_time = now.replace(hour=next_hour, minute=30, second=0, microsecond=0)
 
     # 如果是0点，日期+1
     if next_hour == 0:
@@ -951,7 +982,8 @@ def run_scheduled():
     logger.info("=" * 80)
     logger.info("期货多品种监控系统 - 定时运行模式")
     logger.info(f"启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.info(f"运行间隔: 每{RUN_INTERVAL_HOURS}小时 (0:00, 4:00, 8:00, 12:00, 16:00, 20:00)")
+    logger.info(f"运行间隔: 每4小时K线收盘后30分钟运行 (0:30, 8:30, 12:30, 20:30)")
+    logger.info(f"K线时间点: 00:00, 08:00, 12:00, 20:00 (无04:00和16:00)")
     logger.info("已注册信号处理器，支持优雅退出")
     logger.info("=" * 80)
 

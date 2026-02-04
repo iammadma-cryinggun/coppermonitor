@@ -78,7 +78,7 @@ class ChinaFuturesFetcher:
     def __init__(self):
         """初始化数据获取器"""
         self._cache: Dict[str, tuple] = {}
-        self._cache_ttl = timedelta(minutes=15)
+        self._cache_ttl = timedelta(minutes=5)  # 缩短缓存时间到5分钟
 
     def get_supported_symbols(self) -> Dict[str, str]:
         """获取支持的期货品种列表"""
