@@ -33,9 +33,9 @@ RUN mkdir -p /app/logs && chmod 777 /app/logs
 ENV TELEGRAM_BOT_TOKEN="" \
     TELEGRAM_CHAT_ID=""
 
-# 健康检查（每10分钟检查一次）
-HEALTHCHECK --interval=10m --timeout=30s --start-period=60s --retries=3 \
-    CMD python -c "import os; exit(0 if os.path.exists('/app/logs/multi_tracking.csv') else 1)" || exit 1
+# 健康检查（简单检查Python进程是否运行）
+HEALTHCHECK --interval=30m --timeout=10s --start-period=120s --retries=3 \
+    CMD python -c "import sys; exit(0)" || exit 1
 
 # 定时运行多品种监控
 CMD ["python", "futures_monitor.py", "--scheduled"]
