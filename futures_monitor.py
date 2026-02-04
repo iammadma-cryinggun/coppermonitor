@@ -1,0 +1,880 @@
+# -*- coding: utf-8 -*-
+"""
+===================================
+期货多品种策略监控系统（TOP 10优质信号）
+===================================
+
+功能:
+1. 同时监控10个期货品种
+2. 每个品种使用独立的最优参数
+3. 独立的持仓状态管理
+4. 每4小时整点运行（0:00, 4:00, 8:00, 12:00, 16:00, 20:00）
+5. 统一的信号推送和日志记录
+6. 不记录具体金额，只记录持仓状态
+
+监控品种（按信号质量排序）:
+1. PTA      - 83.8分
+2. 沪镍      - 81.0分
+3. 棕榈油     - 80.0分
+4. 纯碱      - 78.6分
+5. PVC      - 78.3分
+6. 沪铜      - 77.0分
+7. 豆粕      - 76.7分
+8. 沪锡      - 76.2分
+9. 沪铅      - 73.3分
+10. 玻璃      - 71.9分
+"""
+
+import pandas as pd
+import numpy as np
+from pathlib import Path
+from datetime import datetime, timedelta
+import json
+import logging
+import time
+import signal
+import sys
+from typing import Dict, List, Optional
+
+# 导入本地模块
+from china_futures_fetcher import ChinaFuturesFetcher
+from notifier import get_notifier
+
+# 全局变量：优雅退出标志
+shutdown_requested = False
+
+
+def signal_handler(signum, frame):
+    """处理退出信号，实现优雅退出"""
+    global shutdown_requested
+    logger.info(f"\n收到退出信号 {signum}，准备优雅退出...")
+    shutdown_requested = True
+
+
+# 注册信号处理器
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+
+# ==========================================
+# TOP 10 品种配置（最优参数）
+# ==========================================
+
+TOP10_FUTURES_CONFIG = {
+    'PTA': {
+        'name': 'PTA',
+        'code': 'TA',  # 郑商所代码
+        'exchange': 'CZCE',
+        'quality_score': 83.8,
+        'params': {
+            'EMA_FAST': 12,
+            'EMA_SLOW': 10,
+            'RSI_FILTER': 40,
+            'RATIO_TRIGGER': 1.25,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 5,
+        'margin_rate': 0.07
+    },
+    '沪镍': {
+        'name': '沪镍',
+        'code': 'NI',  # 上期所代码
+        'exchange': 'SHFE',
+        'quality_score': 81.0,
+        'params': {
+            'EMA_FAST': 3,
+            'EMA_SLOW': 20,
+            'RSI_FILTER': 55,
+            'RATIO_TRIGGER': 1.10,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 1,
+        'margin_rate': 0.12
+    },
+    '棕榈油': {
+        'name': '棕榈油',
+        'code': 'P',  # 大商所代码
+        'exchange': 'DCE',
+        'quality_score': 80.0,
+        'params': {
+            'EMA_FAST': 12,
+            'EMA_SLOW': 10,
+            'RSI_FILTER': 45,
+            'RATIO_TRIGGER': 1.20,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 10,
+        'margin_rate': 0.08
+    },
+    '纯碱': {
+        'name': '纯碱',
+        'code': 'SA',  # 郑商所代码
+        'exchange': 'CZCE',
+        'quality_score': 78.6,
+        'params': {
+            'EMA_FAST': 12,
+            'EMA_SLOW': 20,
+            'RSI_FILTER': 35,
+            'RATIO_TRIGGER': 1.05,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 20,
+        'margin_rate': 0.08
+    },
+    'PVC': {
+        'name': 'PVC',
+        'code': 'V',  # 大商所代码
+        'exchange': 'DCE',
+        'quality_score': 78.3,
+        'params': {
+            'EMA_FAST': 3,
+            'EMA_SLOW': 25,
+            'RSI_FILTER': 55,
+            'RATIO_TRIGGER': 1.05,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 5,
+        'margin_rate': 0.08
+    },
+    '沪铜': {
+        'name': '沪铜',
+        'code': 'CU',  # 上期所代码
+        'exchange': 'SHFE',
+        'quality_score': 77.0,
+        'params': {
+            'EMA_FAST': 3,
+            'EMA_SLOW': 20,
+            'RSI_FILTER': 35,
+            'RATIO_TRIGGER': 1.05,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 5,
+        'margin_rate': 0.08
+    },
+    '豆粕': {
+        'name': '豆粕',
+        'code': 'M',  # 大商所代码
+        'exchange': 'DCE',
+        'quality_score': 76.7,
+        'params': {
+            'EMA_FAST': 12,
+            'EMA_SLOW': 20,
+            'RSI_FILTER': 35,
+            'RATIO_TRIGGER': 1.25,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 10,
+        'margin_rate': 0.08
+    },
+    '沪锡': {
+        'name': '沪锡',
+        'code': 'SN',  # 上期所代码
+        'exchange': 'SHFE',
+        'quality_score': 76.2,
+        'params': {
+            'EMA_FAST': 3,
+            'EMA_SLOW': 10,
+            'RSI_FILTER': 35,
+            'RATIO_TRIGGER': 1.25,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 1,
+        'margin_rate': 0.13
+    },
+    '沪铅': {
+        'name': '沪铅',
+        'code': 'PB',  # 上期所代码
+        'exchange': 'SHFE',
+        'quality_score': 73.3,
+        'params': {
+            'EMA_FAST': 12,
+            'EMA_SLOW': 10,
+            'RSI_FILTER': 40,
+            'RATIO_TRIGGER': 1.05,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 5,
+        'margin_rate': 0.08
+    },
+    '玻璃': {
+        'name': '玻璃',
+        'code': 'FG',  # 郑商所代码
+        'exchange': 'CZCE',
+        'quality_score': 71.9,
+        'params': {
+            'EMA_FAST': 12,
+            'EMA_SLOW': 10,
+            'RSI_FILTER': 35,
+            'RATIO_TRIGGER': 1.10,
+            'STC_SELL_ZONE': 75,
+            'STOP_LOSS_PCT': 0.02
+        },
+        'contract_size': 20,
+        'margin_rate': 0.08
+    }
+}
+
+# 固定技术参数
+MACD_FAST = 12
+MACD_SLOW = 26
+MACD_SIGNAL = 9
+RSI_PERIOD = 14
+STC_LENGTH = 10
+STC_FAST = 23
+STC_SLOW = 50
+
+# 配置
+HISTORICAL_DAYS = 300  # 获取历史数据天数
+RUN_INTERVAL_HOURS = 4  # 运行间隔（小时）
+
+# 基础路径
+BASE_DIR = Path(__file__).parent
+LOGS_DIR = BASE_DIR / 'logs'
+CONFIG_DIR = BASE_DIR / 'config'
+
+# 数据路径
+BACKUP_DATA_DIR = BASE_DIR / 'data'
+POSITIONS_FILE = LOGS_DIR / 'multi_positions.json'
+SIGNAL_LOG_FILE = LOGS_DIR / 'multi_signals.json'
+TRACKING_FILE = LOGS_DIR / 'multi_tracking.csv'
+LOG_FILE = LOGS_DIR / 'multi_monitor.log'
+
+# 确保目录存在
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+
+# 设置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s | %(levelname)s | %(message)s',
+    handlers=[
+        logging.FileHandler(LOG_FILE, encoding='utf-8'),
+        logging.StreamHandler()
+    ]
+)
+logger = logging.getLogger(__name__)
+
+# 数据获取器
+fetcher = ChinaFuturesFetcher()
+
+# Telegram通知器
+telegram_notifier = get_notifier()
+
+
+# ==========================================
+# 技术指标计算
+# ==========================================
+
+def calculate_indicators(df, params):
+    """计算技术指标"""
+    df = df.copy()
+
+    # EMA
+    df['ema_fast'] = df['close'].ewm(span=params['EMA_FAST'], adjust=False).mean()
+    df['ema_slow'] = df['close'].ewm(span=params['EMA_SLOW'], adjust=False).mean()
+
+    # MACD & Ratio
+    exp1 = df['close'].ewm(span=MACD_FAST, adjust=False).mean()
+    exp2 = df['close'].ewm(span=MACD_SLOW, adjust=False).mean()
+    df['macd_dif'] = exp1 - exp2
+    df['macd_dea'] = df['macd_dif'].ewm(span=MACD_SIGNAL, adjust=False).mean()
+    df['ratio'] = np.where(df['macd_dea'] != 0, df['macd_dif'] / df['macd_dea'], 0)
+
+    # RSI
+    delta = df['close'].diff()
+    gain = (delta.where(delta > 0, 0)).ewm(alpha=1/RSI_PERIOD, adjust=False).mean()
+    loss = (-delta.where(delta < 0, 0)).ewm(alpha=1/RSI_PERIOD, adjust=False).mean()
+    rs = gain / loss
+    df['rsi'] = 100 - (100 / (1 + rs))
+
+    # STC
+    stc_macd = df['close'].ewm(span=STC_FAST, adjust=False).mean() - \
+               df['close'].ewm(span=STC_SLOW, adjust=False).mean()
+    stoch_period = STC_LENGTH
+    min_macd = stc_macd.rolling(window=stoch_period).min()
+    max_macd = stc_macd.rolling(window=stoch_period).max()
+    stoch_k = 100 * (stc_macd - min_macd) / (max_macd - min_macd).replace(0, np.nan)
+    stoch_k = stoch_k.fillna(50)
+    stoch_d = stoch_k.rolling(window=3).mean()
+    min_stoch_d = stoch_d.rolling(window=stoch_period).min()
+    max_stoch_d = stoch_d.rolling(window=stoch_period).max()
+    stc_raw = 100 * (stoch_d - min_stoch_d) / (max_stoch_d - min_stoch_d).replace(0, np.nan)
+    stc_raw = stc_raw.fillna(50)
+    df['stc'] = stc_raw.rolling(window=3).mean()
+
+    df['ratio_prev'] = df['ratio'].shift(1)
+    df['stc_prev'] = df['stc'].shift(1)
+
+    return df
+
+
+# ==========================================
+# 信号检测
+# ==========================================
+
+def check_signals(df, params, future_name):
+    """
+    检查交易信号
+
+    Returns:
+        dict: 信号信息
+    """
+    if len(df) < 200:
+        return {'error': '数据不足，需要至少200根K线'}
+
+    latest = df.iloc[-1]
+    prev = df.iloc[-2]
+
+    # 信号条件
+    trend_up = latest['ema_fast'] > latest['ema_slow']
+    ratio_safe = (0 < latest['ratio'] < params['RATIO_TRIGGER'])
+    ratio_shrinking = latest['ratio'] < prev['ratio']
+    turning_up = latest['macd_dif'] > prev['macd_dif']
+    is_strong = latest['rsi'] > params['RSI_FILTER']
+
+    ema_cross = (prev['ema_fast'] <= prev['ema_slow']) and (latest['ema_fast'] > latest['ema_slow'])
+
+    sniper_signal = trend_up and ratio_safe and ratio_shrinking and turning_up and is_strong
+    chase_signal = ema_cross and is_strong
+
+    buy_signal = sniper_signal or chase_signal
+    buy_reason = 'sniper' if sniper_signal else ('chase' if chase_signal else None)
+
+    # 卖出信号
+    stc_exit = (df['stc_prev'].iloc[-1] > params['STC_SELL_ZONE']) and (latest['stc'] < df['stc_prev'].iloc[-1])
+    trend_exit = latest['ema_fast'] < latest['ema_slow']
+    sell_signal = stc_exit or trend_exit
+    sell_reason = 'stc' if stc_exit else ('trend' if trend_exit else None)
+
+    # 止损价
+    stop_loss = latest['close'] * (1 - params['STOP_LOSS_PCT']) if buy_signal else None
+
+    return {
+        'future': future_name,
+        'datetime': str(latest['datetime']),
+        'price': float(latest['close']),
+        'indicators': {
+            'ema_fast': float(latest['ema_fast']),
+            'ema_slow': float(latest['ema_slow']),
+            'macd_dif': float(latest['macd_dif']),
+            'macd_dea': float(latest['macd_dea']),
+            'ratio': float(latest['ratio']),
+            'ratio_prev': float(df['ratio_prev'].iloc[-1]),
+            'rsi': float(latest['rsi']),
+            'stc': float(latest['stc']),
+            'stc_prev': float(df['stc_prev'].iloc[-1])
+        },
+        'buy_signal': buy_signal,
+        'sell_signal': sell_signal,
+        'signal_type': buy_reason if buy_signal else (sell_reason if sell_signal else None),
+        'stop_loss': stop_loss,
+        'reason': {
+            'buy': buy_reason,
+            'sell': sell_reason
+        },
+        'trend': 'up' if trend_up else 'down',
+        'strength': 'strong' if latest['ratio'] > 1.5 else ('normal' if latest['ratio'] > 1.0 else 'weak')
+    }
+
+
+# ==========================================
+# 持仓管理
+# ==========================================
+
+def load_all_positions() -> Dict:
+    """加载所有品种的持仓状态"""
+    if POSITIONS_FILE.exists():
+        try:
+            with open(POSITIONS_FILE, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except (json.JSONDecodeError, ValueError) as e:
+            logger.warning(f"[持仓] 现有文件损坏，将创建新文件: {e}")
+            # 备份损坏文件
+            backup_path = POSITIONS_FILE.with_suffix('.json.bak')
+            POSITIONS_FILE.rename(backup_path)
+            logger.info(f"[持仓] 已备份损坏文件到: {backup_path}")
+
+    # 初始化空持仓
+    return {
+        future_name: {
+            'holding': False,
+            'entry_price': None,
+            'entry_datetime': None,
+            'stop_loss': None,
+            'signal_id': None
+        }
+        for future_name in TOP10_FUTURES_CONFIG.keys()
+    }
+
+
+def save_all_positions(positions: Dict):
+    """保存所有品种的持仓状态"""
+    with open(POSITIONS_FILE, 'w', encoding='utf-8') as f:
+        json.dump(positions, f, ensure_ascii=False, indent=2)
+
+
+def update_position(future_name: str, signal: dict, positions: Dict) -> Dict:
+    """
+    更新单个品种的持仓状态
+
+    Returns:
+        更新后的positions字典
+    """
+    position = positions.get(future_name, {
+        'holding': False,
+        'entry_price': None,
+        'entry_datetime': None,
+        'stop_loss': None,
+        'signal_id': None
+    })
+
+    if position['holding']:
+        # 当前有持仓，检查是否需要平仓
+        if signal['sell_signal']:
+            logger.info(f"[{future_name}] 平仓信号: {signal['reason']['sell']}")
+
+            # 计算盈亏（百分比）
+            entry_price = position['entry_price']
+            current_price = signal['price']
+            pnl_pct = (current_price - entry_price) / entry_price * 100
+
+            logger.info(f"[{future_name}] 平仓: 入场{entry_price:.2f} → 出场{current_price:.2f} | 盈亏{pnl_pct:+.2f}%")
+
+            # 清空持仓
+            positions[future_name] = {
+                'holding': False,
+                'entry_price': None,
+                'entry_datetime': None,
+                'stop_loss': None,
+                'signal_id': None
+            }
+
+            # 记录交易
+            log_trade(future_name, 'sell', signal, pnl_pct)
+
+    else:
+        # 当前无持仓，检查是否需要开仓
+        if signal['buy_signal']:
+            logger.info(f"[{future_name}] 开仓信号: {signal['reason']['buy']}")
+
+            positions[future_name] = {
+                'holding': True,
+                'entry_price': signal['price'],
+                'entry_datetime': signal['datetime'],
+                'stop_loss': signal['stop_loss'],
+                'signal_id': f"{signal['datetime']}_{signal.get('signal_type', 'manual')}"
+            }
+
+            logger.info(f"[{future_name}] 开仓: 价格{signal['price']:.2f} | 止损{signal['stop_loss']:.2f}")
+
+            # 记录交易
+            log_trade(future_name, 'buy', signal, 0)
+
+    return positions
+
+
+def log_trade(future_name: str, action: str, signal: dict, pnl_pct: float):
+    """记录交易到日志"""
+    log_path = Path(SIGNAL_LOG_FILE)
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if log_path.exists():
+        try:
+            with open(log_path, 'r', encoding='utf-8') as f:
+                logs = json.load(f)
+        except (json.JSONDecodeError, ValueError):
+            logs = []
+    else:
+        logs = []
+
+    trade_entry = {
+        'timestamp': datetime.now().isoformat(),
+        'future': future_name,
+        'action': action,  # 'buy' or 'sell'
+        'signal_datetime': signal['datetime'],
+        'price': signal['price'],
+        'signal_type': signal.get('signal_type', 'unknown'),
+        'pnl_pct': pnl_pct if action == 'sell' else None,
+        'stop_loss': signal.get('stop_loss'),
+        'indicators': signal['indicators']
+    }
+
+    logs.append(trade_entry)
+
+    with open(log_path, 'w', encoding='utf-8') as f:
+        json.dump(logs, f, ensure_ascii=False, indent=2)
+
+
+# ==========================================
+# 数据获取
+# ==========================================
+
+def load_market_data(future_name: str, future_code: str):
+    """
+    加载单个品种的市场数据
+
+    Returns:
+        (df, data_source) or (None, None)
+    """
+    # 尝试使用实时API
+    logger.debug(f"[{future_name}] 尝试从API获取数据...")
+    df = fetcher.get_historical_data(future_code, days=HISTORICAL_DAYS)
+
+    if df is not None and not df.empty:
+        logger.debug(f"[{future_name}] API成功获取 {len(df)} 条记录")
+        df['datetime'] = pd.to_datetime(df['datetime'])
+        df = df.sort_values('datetime').reset_index(drop=True)
+        return df, 'API'
+
+    # API失败，尝试CSV备用
+    logger.debug(f"[{future_name}] API失败，尝试CSV备用...")
+
+    # 查找CSV文件
+    csv_files = list(BACKUP_DATA_DIR.glob(f'*{future_name}*.csv'))
+    csv_files.extend(list(BACKUP_DATA_DIR.glob(f'*{future_code}*.csv')))
+
+    if csv_files:
+        csv_path = csv_files[0]
+        try:
+            df = pd.read_csv(csv_path)
+            df.columns = [c.strip() for c in df.columns]
+            df['datetime'] = pd.to_datetime(df['datetime'])
+            logger.debug(f"[{future_name}] CSV成功加载 {len(df)} 条记录")
+            return df, 'CSV'
+        except Exception as e:
+            logger.error(f"[{future_name}] CSV加载失败: {e}")
+
+    return None, None
+
+
+# ==========================================
+# 主监控逻辑
+# ==========================================
+
+def monitor_single_future(future_name: str, config: dict, positions: Dict) -> Dict:
+    """
+    监控单个品种
+
+    Returns:
+        该品种的信号信息
+    """
+    logger.info(f"\n{'='*60}")
+    logger.info(f"[{future_name}] 质量评分: {config['quality_score']}分")
+    logger.info(f"[{future_name}] 参数: EMA({config['params']['EMA_FAST']},{config['params']['EMA_SLOW']}), "
+                f"RSI={config['params']['RSI_FILTER']}, RATIO={config['params']['RATIO_TRIGGER']:.2f}, "
+                f"STC={config['params']['STC_SELL_ZONE']}")
+    logger.info(f"{'='*60}")
+
+    # 加载数据
+    df, data_source = load_market_data(future_name, config['code'])
+
+    if df is None:
+        logger.error(f"[{future_name}] 数据加载失败")
+        return {'error': '数据加载失败'}
+
+    logger.info(f"[{future_name}] 数据源: {data_source} | 数据量: {len(df)}条")
+
+    # 计算指标
+    df = calculate_indicators(df, config['params'])
+
+    # 检查信号
+    signal = check_signals(df, config['params'], future_name)
+
+    if 'error' in signal:
+        logger.error(f"[{future_name}] {signal['error']}")
+        return signal
+
+    # 获取当前持仓
+    position = positions.get(future_name, {'holding': False})
+
+    # 输出当前状态
+    logger.info(f"[{future_name}] 价格: {signal['price']:.2f} | "
+                f"趋势: {signal['trend']} ({signal['strength']}) | "
+                f"Ratio: {signal['indicators']['ratio']:.2f} | "
+                f"RSI: {signal['indicators']['rsi']:.1f} | "
+                f"STC: {signal['indicators']['stc']:.1f}")
+
+    if position['holding']:
+        logger.info(f"[{future_name}] 当前持仓: 是 | "
+                    f"入场价: {position['entry_price']:.2f} | "
+                    f"止损价: {position['stop_loss']:.2f}")
+
+        # 计算当前盈亏
+        current_pnl_pct = (signal['price'] - position['entry_price']) / position['entry_price'] * 100
+        logger.info(f"[{future_name}] 当前盈亏: {current_pnl_pct:+.2f}%")
+
+        # 检查止损
+        if signal['price'] <= position['stop_loss']:
+            logger.warning(f"[{future_name}] 止损触发! 价格 {signal['price']:.2f} <= 止损 {position['stop_loss']:.2f}")
+            signal['sell_signal'] = True
+            signal['signal_type'] = 'stop_loss'
+            signal['reason']['sell'] = 'stop_loss'
+
+    else:
+        logger.info(f"[{future_name}] 当前持仓: 否")
+
+    # 输出信号
+    if signal['buy_signal']:
+        logger.warning(f"[{future_name}] 买入信号: {signal['reason']['buy']} ⭐")
+
+    if signal['sell_signal']:
+        logger.warning(f"[{future_name}] 卖出信号: {signal['reason']['sell']} ⭐")
+
+    # 更新持仓状态
+    positions = update_position(future_name, signal, positions)
+
+    return signal
+
+
+def run_monitoring():
+    """运行多品种监控"""
+    logger.info("=" * 80)
+    logger.info("期货多品种策略监控系统（TOP 10优质信号）")
+    logger.info(f"运行时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info("=" * 80)
+
+    # 加载所有持仓状态
+    positions = load_all_positions()
+
+    # 监控结果
+    all_signals = {}
+    buy_signals = []
+    sell_signals = []
+    active_positions = []
+
+    # 逐个监控
+    for future_name, config in TOP10_FUTURES_CONFIG.items():
+        try:
+            signal = monitor_single_future(future_name, config, positions)
+            all_signals[future_name] = signal
+
+            # 记录交易信号
+            if signal.get('buy_signal'):
+                buy_signals.append(future_name)
+            if signal.get('sell_signal'):
+                sell_signals.append(future_name)
+
+            # 记录当前持仓
+            if positions[future_name]['holding']:
+                active_positions.append(future_name)
+
+        except Exception as e:
+            logger.error(f"[{future_name}] 监控异常: {e}")
+            all_signals[future_name] = {'error': str(e)}
+
+    # 保存持仓状态
+    save_all_positions(positions)
+
+    # 保存追踪记录
+    tracking_record = {
+        'timestamp': datetime.now().isoformat(),
+        'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'monitored_count': len(TOP10_FUTURES_CONFIG),
+        'buy_signals': ','.join(buy_signals) if buy_signals else '',
+        'sell_signals': ','.join(sell_signals) if sell_signals else '',
+        'active_positions': ','.join(active_positions) if active_positions else '',
+    }
+
+    # 添加各品种状态
+    for future_name, signal in all_signals.items():
+        if 'error' not in signal:
+            tracking_record[f'{future_name}_price'] = signal['price']
+            tracking_record[f'{future_name}_trend'] = signal['trend']
+            tracking_record[f'{future_name}_buy'] = signal['buy_signal']
+            tracking_record[f'{future_name}_sell'] = signal['sell_signal']
+            tracking_record[f'{future_name}_holding'] = positions[future_name]['holding']
+
+    df_tracking = pd.DataFrame([tracking_record])
+    if TRACKING_FILE.exists():
+        df_existing = pd.read_csv(TRACKING_FILE)
+        df_tracking = pd.concat([df_existing, df_tracking], ignore_index=True)
+
+    df_tracking.to_csv(TRACKING_FILE, index=False, encoding='utf-8-sig')
+
+    # 汇总报告
+    logger.info("\n" + "=" * 80)
+    logger.info("监控汇总")
+    logger.info("=" * 80)
+    logger.info(f"监控品种: {len(TOP10_FUTURES_CONFIG)}个")
+    logger.info(f"当前持仓: {len(active_positions)}个 - {', '.join(active_positions) if active_positions else '无'}")
+
+    if buy_signals:
+        logger.warning(f"买入信号: {', '.join(buy_signals)} ⭐")
+
+    if sell_signals:
+        logger.warning(f"卖出信号: {', '.join(sell_signals)} ⭐")
+
+    logger.info(f"追踪记录已保存: {TRACKING_FILE}")
+
+    # Telegram推送
+    if telegram_notifier:
+        logger.info("\n[Telegram] 发送监控报告...")
+        success = send_telegram_report(all_signals, positions, buy_signals, sell_signals, active_positions)
+        if success:
+            logger.info("[Telegram] 报告发送成功")
+        else:
+            logger.warning("[Telegram] 报告发送失败")
+
+    logger.info("\n" + "=" * 80)
+    logger.info("监控完成")
+    logger.info("=" * 80)
+
+    return all_signals, positions
+
+
+# ==========================================
+# Telegram推送
+# ==========================================
+
+def send_telegram_report(all_signals, positions, buy_signals, sell_signals, active_positions):
+    """发送Telegram报告"""
+    if not telegram_notifier:
+        return False
+
+    # 构建报告
+    report_lines = [
+        "📊 *期货多品种监控报告*",
+        f"🕐 时间: {datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        "",
+        f"📈 监控品种: {len(TOP10_FUTURES_CONFIG)}个",
+        f"💼 当前持仓: {len(active_positions)}个",
+    ]
+
+    if active_positions:
+        report_lines.append(f"   持仓: {', '.join(active_positions)}")
+
+    if buy_signals:
+        report_lines.append(f"\n🟢 *买入信号 ({len(buy_signals)}个):*")
+        for future_name in buy_signals:
+            signal = all_signals[future_name]
+            report_lines.append(f"   • {future_name}: {signal['signal_type']} @ {signal['price']:.2f}")
+
+    if sell_signals:
+        report_lines.append(f"\n🔴 *卖出信号 ({len(sell_signals)}个):*")
+        for future_name in sell_signals:
+            signal = all_signals[future_name]
+            report_lines.append(f"   • {future_name}: {signal['signal_type']} @ {signal['price']:.2f}")
+
+    # 添加各品种简要状态
+    report_lines.append(f"\n📋 *各品种状态:*")
+    for future_name, config in TOP10_FUTURES_CONFIG.items():
+        signal = all_signals.get(future_name, {})
+        position = positions.get(future_name, {})
+
+        if 'error' in signal:
+            status = "❌ 数据错误"
+        elif position.get('holding'):
+            entry_price = position['entry_price']
+            pnl_pct = (signal['price'] - entry_price) / entry_price * 100
+            status = f"📌 持仓 | 盈亏{pnl_pct:+.1f}%"
+        elif signal.get('buy_signal'):
+            status = f"🟢 {signal['signal_type']}"
+        elif signal.get('sell_signal'):
+            status = f"🔴 {signal['signal_type']}"
+        else:
+            trend_icon = "📈" if signal.get('trend') == 'up' else "📉"
+            status = f"{trend_icon} {signal.get('strength', 'unknown')}"
+
+        report_lines.append(f"   {future_name}: {status}")
+
+    report_text = "\n".join(report_lines)
+
+    try:
+        return telegram_notifier.send_message(report_text)
+    except Exception as e:
+        logger.error(f"[Telegram] 发送失败: {e}")
+        return False
+
+
+# ==========================================
+# 定时运行
+# ==========================================
+
+def get_wait_seconds():
+    """计算到下一个4小时整点的等待时间"""
+    now = datetime.now()
+    hour = now.hour
+
+    # 计算4小时整点
+    next_hour = ((hour // RUN_INTERVAL_HOURS) + 1) * RUN_INTERVAL_HOURS
+    if next_hour >= 24:
+        next_hour = 0
+
+    next_time = now.replace(hour=next_hour, minute=0, second=0, microsecond=0)
+
+    # 如果是0点，日期+1
+    if next_hour == 0:
+        next_time += timedelta(days=1)
+
+    wait_seconds = (next_time - now).total_seconds()
+    return wait_seconds, next_time
+
+
+def run_scheduled():
+    """定时运行监控"""
+    logger.info("=" * 80)
+    logger.info("期货多品种监控系统 - 定时运行模式")
+    logger.info(f"启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"运行间隔: 每{RUN_INTERVAL_HOURS}小时 (0:00, 4:00, 8:00, 12:00, 16:00, 20:00)")
+    logger.info("已注册信号处理器，支持优雅退出")
+    logger.info("=" * 80)
+
+    while not shutdown_requested:
+        try:
+            # 立即运行一次
+            logger.info("\n开始执行监控...")
+            run_monitoring()
+
+            # 如果收到退出信号，退出循环
+            if shutdown_requested:
+                break
+
+            # 计算等待时间
+            wait_seconds, next_time = get_wait_seconds()
+            wait_hours = wait_seconds / 3600
+
+            logger.info(f"\n下次运行时间: {next_time.strftime('%Y-%m-%d %H:%M:%S')}")
+            logger.info(f"等待时长: {wait_hours:.2f}小时 ({wait_seconds/60:.1f}分钟)")
+
+            # 分段等待，每60秒检查一次退出信号
+            wait_intervals = int(wait_seconds / 60)
+            wait_remainder = wait_seconds % 60
+
+            for i in range(wait_intervals):
+                if shutdown_requested:
+                    logger.info("检测到退出信号，中断等待...")
+                    break
+                time.sleep(60)
+
+            if not shutdown_requested and wait_remainder > 0:
+                time.sleep(wait_remainder)
+
+        except Exception as e:
+            logger.error(f"监控运行异常: {e}")
+            # 异常时等待5分钟后重试
+            if not shutdown_requested:
+                logger.info("5分钟后重试...")
+                time.sleep(300)
+
+    logger.info("=" * 80)
+    logger.info("服务已优雅退出")
+    logger.info("=" * 80)
+
+
+if __name__ == "__main__":
+    import sys
+
+    if len(sys.argv) > 1 and sys.argv[1] == '--scheduled':
+        # 定时运行模式
+        run_scheduled()
+    else:
+        # 单次运行模式
+        run_monitoring()
