@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-期货多品种策略监控系统（TOP 10优质信号）
+期货多品种策略监控系统（TOP 7优质信号）
 ===================================
 
 功能:
-1. 同时监控10个期货品种
+1. 同时监控7个期货品种
 2. 每个品种使用独立的最优参数
 3. 独立的持仓状态管理
 4. 每4小时K线收盘后30分钟运行（0:30, 8:30, 12:30, 20:30），确保数据已更新
@@ -13,16 +13,13 @@
 6. 不记录具体金额，只记录持仓状态
 
 监控品种（按信号质量排序）:
-1. PTA      - 83.8分
-2. 沪镍      - 81.0分
-3. 棕榈油     - 80.0分
-4. 纯碱      - 78.6分
-5. PVC      - 78.3分
-6. 沪铜      - 77.0分
-7. 豆粕      - 76.7分
-8. 沪锡      - 76.2分
-9. 沪铅      - 73.3分
-10. 玻璃      - 71.9分
+1. 沪镍      - 81.0分
+2. 纯碱      - 78.6分
+3. PVC      - 78.3分
+4. 沪铜      - 77.0分
+5. 沪锡      - 76.2分
+6. 沪铅      - 73.3分
+7. 玻璃      - 71.9分
 """
 
 import pandas as pd
@@ -56,26 +53,10 @@ signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGINT, signal_handler)
 
 # ==========================================
-# TOP 10 品种配置（最优参数）
+# TOP 7 品种配置（最优参数）
 # ==========================================
 
-TOP10_FUTURES_CONFIG = {
-    'PTA': {
-        'name': 'PTA',
-        'code': 'TA',  # 郑商所代码
-        'exchange': 'CZCE',
-        'quality_score': 83.8,
-        'params': {
-            'EMA_FAST': 12,
-            'EMA_SLOW': 10,
-            'RSI_FILTER': 40,
-            'RATIO_TRIGGER': 1.25,
-            'STC_SELL_ZONE': 75,
-            'STOP_LOSS_PCT': 0.02
-        },
-        'contract_size': 5,
-        'margin_rate': 0.07
-    },
+TOP7_FUTURES_CONFIG = {
     '沪镍': {
         'name': '沪镍',
         'code': 'NI',  # 上期所代码
@@ -91,22 +72,6 @@ TOP10_FUTURES_CONFIG = {
         },
         'contract_size': 1,
         'margin_rate': 0.12
-    },
-    '棕榈油': {
-        'name': '棕榈油',
-        'code': 'P',  # 大商所代码
-        'exchange': 'DCE',
-        'quality_score': 80.0,
-        'params': {
-            'EMA_FAST': 12,
-            'EMA_SLOW': 10,
-            'RSI_FILTER': 45,
-            'RATIO_TRIGGER': 1.20,
-            'STC_SELL_ZONE': 75,
-            'STOP_LOSS_PCT': 0.02
-        },
-        'contract_size': 10,
-        'margin_rate': 0.08
     },
     '纯碱': {
         'name': '纯碱',
@@ -154,22 +119,6 @@ TOP10_FUTURES_CONFIG = {
             'STOP_LOSS_PCT': 0.02
         },
         'contract_size': 5,
-        'margin_rate': 0.08
-    },
-    '豆粕': {
-        'name': '豆粕',
-        'code': 'M',  # 大商所代码
-        'exchange': 'DCE',
-        'quality_score': 76.7,
-        'params': {
-            'EMA_FAST': 12,
-            'EMA_SLOW': 20,
-            'RSI_FILTER': 35,
-            'RATIO_TRIGGER': 1.25,
-            'STC_SELL_ZONE': 75,
-            'STOP_LOSS_PCT': 0.02
-        },
-        'contract_size': 10,
         'margin_rate': 0.08
     },
     '沪锡': {
@@ -414,7 +363,7 @@ def load_all_positions() -> Dict:
             'stop_loss': None,
             'signal_id': None
         }
-        for future_name in TOP10_FUTURES_CONFIG.keys()
+        for future_name in TOP7_FUTURES_CONFIG.keys()
     }
 
 
@@ -545,7 +494,7 @@ def save_replay_data(all_signals: dict, positions: dict, data_sources: dict):
 
     timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
-    for future_name, config in TOP10_FUTURES_CONFIG.items():
+    for future_name, config in TOP7_FUTURES_CONFIG.items():
         signal = all_signals.get(future_name, {})
         position = positions.get(future_name, {})
         data_source = data_sources.get(future_name, 'Unknown')
@@ -771,7 +720,7 @@ def run_monitoring():
     active_positions = []
 
     # 逐个监控
-    for future_name, config in TOP10_FUTURES_CONFIG.items():
+    for future_name, config in TOP7_FUTURES_CONFIG.items():
         try:
             signal, data_source = monitor_single_future(future_name, config, positions)
             all_signals[future_name] = signal
@@ -799,7 +748,7 @@ def run_monitoring():
     tracking_record = {
         'timestamp': datetime.now().isoformat(),
         'datetime': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-        'monitored_count': len(TOP10_FUTURES_CONFIG),
+        'monitored_count': len(TOP7_FUTURES_CONFIG),
         'buy_signals': ','.join(buy_signals) if buy_signals else '',
         'sell_signals': ','.join(sell_signals) if sell_signals else '',
         'active_positions': ','.join(active_positions) if active_positions else '',
@@ -825,7 +774,7 @@ def run_monitoring():
     logger.info("\n" + "=" * 80)
     logger.info("监控汇总")
     logger.info("=" * 80)
-    logger.info(f"监控品种: {len(TOP10_FUTURES_CONFIG)}个")
+    logger.info(f"监控品种: {len(TOP7_FUTURES_CONFIG)}个")
     logger.info(f"当前持仓: {len(active_positions)}个 - {', '.join(active_positions) if active_positions else '无'}")
 
     if buy_signals:
@@ -880,7 +829,7 @@ def send_telegram_report(all_signals, positions, buy_signals, sell_signals, acti
         f"🕐 报告时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         f"📡 数据时间: {data_time_str}",  # 显示数据源时间，用于诊断数据是否更新
         "",
-        f"📈 监控品种: {len(TOP10_FUTURES_CONFIG)}个",
+        f"📈 监控品种: {len(TOP7_FUTURES_CONFIG)}个",
         f"💼 当前持仓: {len(active_positions)}个",
     ]
 
@@ -901,7 +850,7 @@ def send_telegram_report(all_signals, positions, buy_signals, sell_signals, acti
 
     # 添加各品种简要状态
     report_lines.append(f"\n📋 *各品种状态:*")
-    for future_name, config in TOP10_FUTURES_CONFIG.items():
+    for future_name, config in TOP7_FUTURES_CONFIG.items():
         signal = all_signals.get(future_name, {})
         position = positions.get(future_name, {})
 
