@@ -245,6 +245,7 @@ BACKUP_DATA_DIR = BASE_DIR / 'data'
 POSITIONS_FILE = LOGS_DIR / 'multi_positions.json'
 SIGNAL_LOG_FILE = LOGS_DIR / 'multi_signals.json'
 TRACKING_FILE = LOGS_DIR / 'multi_tracking.csv'
+REPLAY_DATA_FILE = LOGS_DIR / 'multi_replay_data.csv'  # 详细复盘数据
 LOG_FILE = LOGS_DIR / 'multi_monitor.log'
 
 # 确保目录存在
@@ -521,6 +522,92 @@ def log_trade(future_name: str, action: str, signal: dict, pnl_pct: float):
         json.dump(logs, f, ensure_ascii=False, indent=2)
 
 
+def save_replay_data(all_signals: dict, positions: dict, data_sources: dict):
+    """
+    保存详细复盘数据（OHLC + 技术指标）
+
+    用于未来复盘分析，包含完整的价格和技术指标信息
+    """
+    replay_records = []
+
+    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    for future_name, config in TOP10_FUTURES_CONFIG.items():
+        signal = all_signals.get(future_name, {})
+        position = positions.get(future_name, {})
+        data_source = data_sources.get(future_name, 'Unknown')
+
+        # 跳过错误数据
+        if 'error' in signal:
+            continue
+
+        try:
+            record = {
+                'timestamp': timestamp,
+                'future': future_name,
+                'code': config['code'],
+                'exchange': config['exchange'],
+                'quality_score': config['quality_score'],
+
+                # OHLC价格（完整K线数据）
+                'open': signal.get('indicators', {}).get('open', 0),  # 需要从原始数据获取
+                'high': signal.get('high', 0),
+                'low': signal.get('low', 0),
+                'close': signal.get('price', 0),
+
+                # 技术指标值
+                'ema_fast': signal.get('indicators', {}).get('ema_fast', 0),
+                'ema_slow': signal.get('indicators', {}).get('ema_slow', 0),
+                'macd_dif': signal.get('indicators', {}).get('macd_dif', 0),
+                'macd_dea': signal.get('indicators', {}).get('macd_dea', 0),
+                'ratio': signal.get('indicators', {}).get('ratio', 0),
+                'ratio_prev': signal.get('indicators', {}).get('ratio_prev', 0),
+                'rsi': signal.get('indicators', {}).get('rsi', 0),
+                'stc': signal.get('indicators', {}).get('stc', 0),
+                'stc_prev': signal.get('indicators', {}).get('stc_prev', 0),
+
+                # 信号状态
+                'trend': signal.get('trend', 'unknown'),
+                'strength': signal.get('strength', 'unknown'),
+                'buy_signal': signal.get('buy_signal', False),
+                'sell_signal': signal.get('sell_signal', False),
+                'signal_type': signal.get('signal_type', ''),
+
+                # 持仓信息
+                'holding': position.get('holding', False),
+                'entry_price': position.get('entry_price', 0) if position.get('holding') else 0,
+                'stop_loss': position.get('stop_loss', 0) if position.get('holding') else 0,
+
+                # 数据来源
+                'data_source': data_source,
+
+                # 参数配置
+                'param_ema_fast': config['params']['EMA_FAST'],
+                'param_ema_slow': config['params']['EMA_SLOW'],
+                'param_rsi': config['params']['RSI_FILTER'],
+                'param_ratio': config['params']['RATIO_TRIGGER'],
+                'param_stc': config['params']['STC_SELL_ZONE'],
+                'param_stop_loss': config['params']['STOP_LOSS_PCT'],
+            }
+
+            replay_records.append(record)
+
+        except Exception as e:
+            logger.error(f"[{future_name}] 保存复盘数据失败: {e}")
+
+    # 保存到CSV
+    if replay_records:
+        df_replay = pd.DataFrame(replay_records)
+
+        # 追加模式
+        if REPLAY_DATA_FILE.exists():
+            df_existing = pd.read_csv(REPLAY_DATA_FILE)
+            df_replay = pd.concat([df_existing, df_replay], ignore_index=True)
+
+        df_replay.to_csv(REPLAY_DATA_FILE, index=False, encoding='utf-8-sig')
+        logger.info(f"复盘数据已保存: {REPLAY_DATA_FILE} ({len(replay_records)}个品种)")
+
+
 # ==========================================
 # 数据获取
 # ==========================================
@@ -598,7 +685,7 @@ def monitor_single_future(future_name: str, config: dict, positions: Dict) -> Di
 
     if 'error' in signal:
         logger.error(f"[{future_name}] {signal['error']}")
-        return signal
+        return signal, data_source
 
     # 获取当前持仓
     position = positions.get(future_name, {'holding': False})
@@ -647,7 +734,10 @@ def monitor_single_future(future_name: str, config: dict, positions: Dict) -> Di
     # 更新持仓状态
     positions = update_position(future_name, signal, positions)
 
-    return signal
+    # 添加数据源信息到signal中，用于复盘
+    signal['data_source'] = data_source
+
+    return signal, data_source
 
 
 def run_monitoring():
@@ -662,6 +752,7 @@ def run_monitoring():
 
     # 监控结果
     all_signals = {}
+    data_sources = {}  # 记录数据来源
     buy_signals = []
     sell_signals = []
     active_positions = []
@@ -669,8 +760,9 @@ def run_monitoring():
     # 逐个监控
     for future_name, config in TOP10_FUTURES_CONFIG.items():
         try:
-            signal = monitor_single_future(future_name, config, positions)
+            signal, data_source = monitor_single_future(future_name, config, positions)
             all_signals[future_name] = signal
+            data_sources[future_name] = data_source
 
             # 记录交易信号
             if signal.get('buy_signal'):
@@ -685,6 +777,7 @@ def run_monitoring():
         except Exception as e:
             logger.error(f"[{future_name}] 监控异常: {e}")
             all_signals[future_name] = {'error': str(e)}
+            data_sources[future_name] = 'Error'
 
     # 保存持仓状态
     save_all_positions(positions)
@@ -729,6 +822,12 @@ def run_monitoring():
         logger.warning(f"卖出信号: {', '.join(sell_signals)} ⭐")
 
     logger.info(f"追踪记录已保存: {TRACKING_FILE}")
+
+    # 保存详细复盘数据
+    try:
+        save_replay_data(all_signals, positions, data_sources)
+    except Exception as e:
+        logger.error(f"保存复盘数据失败: {e}")
 
     # Telegram推送
     if telegram_notifier:
