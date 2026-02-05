@@ -891,36 +891,43 @@ def send_telegram_report(all_signals, positions, buy_signals, sell_signals, acti
 # ==========================================
 
 def get_wait_seconds():
-    """计算到下一个4小时K线整点的等待时间
+    """计算到下一个交易时段收盘后的等待时间
 
-    实际4小时K线时间点: 00:00, 08:00, 12:00, 20:00
-    (注意: 没有04:00和16:00，这是因为数据源从60分钟重采样导致)
+    4小时K线时间点及实际交易时段:
+    - 08:00 = 早盘（09:00-11:30） -> 在11:30后运行
+    - 12:00 = 午盘（13:30-15:00） -> 在15:30后运行
+    - 20:00 = 夜盘开始（21:00-23:59） -> 在21:30后运行
+    - 00:00 = 夜盘结束（00:00-01:00） -> 在01:30后运行
 
-    为了确保K线已收盘，在整点后30分钟运行
+    监控运行时间: 1:30, 11:30, 15:30, 21:30
     """
     now = datetime.now()
     hour = now.hour
+    minute = now.minute
 
-    # 4小时K线的实际时间点: 0, 8, 12, 20
-    valid_hours = [0, 8, 12, 20]
+    # 运行时间点及对应的K线时间
+    # (运行小时, 运行分钟) -> K线时间说明
+    run_times = [
+        (1, 30),   # 01:30 - 夜盘收盘后，获取00:00数据
+        (11, 30),  # 11:30 - 早盘收盘后，获取08:00数据
+        (15, 30),  # 15:30 - 午盘收盘后，获取12:00数据
+        (21, 30)   # 21:30 - 夜盘开始后，获取20:00数据
+    ]
 
-    # 找到下一个有效的运行时间
-    next_hour = None
-    for valid_hour in valid_hours:
-        if valid_hour > hour:
-            next_hour = valid_hour
+    # 找到下一个运行时间
+    next_run = None
+    for run_hour, run_minute in run_times:
+        if run_hour > hour or (run_hour == hour and run_minute > minute):
+            next_run = (run_hour, run_minute)
             break
 
-    # 如果没找到（已过20:00），下一个是0:00（次日）
-    if next_hour is None:
-        next_hour = 0
-
-    # 在整点后30分钟运行，确保K线已收盘
-    next_time = now.replace(hour=next_hour, minute=30, second=0, microsecond=0)
-
-    # 如果是0点，日期+1
-    if next_hour == 0:
+    # 如果没找到（已过21:30），下一个是1:30（次日）
+    if next_run is None:
+        next_run = (1, 30)
+        next_time = now.replace(hour=next_run[0], minute=next_run[1], second=0, microsecond=0)
         next_time += timedelta(days=1)
+    else:
+        next_time = now.replace(hour=next_run[0], minute=next_run[1], second=0, microsecond=0)
 
     wait_seconds = (next_time - now).total_seconds()
     return wait_seconds, next_time
@@ -931,8 +938,11 @@ def run_scheduled():
     logger.info("=" * 80)
     logger.info("期货多品种监控系统 - 定时运行模式")
     logger.info(f"启动时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.info(f"运行间隔: 每4小时K线收盘后30分钟运行 (0:30, 8:30, 12:30, 20:30)")
-    logger.info(f"K线时间点: 00:00, 08:00, 12:00, 20:00 (无04:00和16:00)")
+    logger.info("运行时间: 根据实际交易时段收盘后运行")
+    logger.info("  - 01:30 (夜盘收盘后，获取00:00数据)")
+    logger.info("  - 11:30 (早盘收盘后，获取08:00数据)")
+    logger.info("  - 15:30 (午盘收盘后，获取12:00数据)")
+    logger.info("  - 21:30 (夜盘开始后，获取20:00数据)")
     logger.info("已注册信号处理器，支持优雅退出")
     logger.info("=" * 80)
 
