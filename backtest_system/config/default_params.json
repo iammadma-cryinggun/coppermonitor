@@ -1,0 +1,105 @@
+{
+  "strategy_name": "期货4小时K线策略",
+  "version": "1.0",
+  "description": "基于EMA、MACD、RSI、STC多指标的趋势跟踪策略",
+
+  "固定参数": {
+    "MACD_FAST": 12,
+    "MACD_SLOW": 26,
+    "MACD_SIGNAL": 9,
+    "RSI_PERIOD": 14,
+    "STC_LENGTH": 10,
+    "STC_FAST": 23,
+    "STC_SLOW": 50,
+    "STOP_LOSS_PCT": 0.02,
+    "INITIAL_CAPITAL": 100000,
+    "MARGIN_RATIO": 0.15
+  },
+
+  "可优化参数": {
+    "EMA_FAST": {
+      "默认值": 3,
+      "范围": [3, 5, 7, 10],
+      "说明": "快速EMA周期"
+    },
+    "EMA_SLOW": {
+      "默认值": 20,
+      "范围": [10, 15, 20, 25],
+      "说明": "慢速EMA周期"
+    },
+    "RSI_FILTER": {
+      "默认值": 40,
+      "范围": [35, 40, 45, 50],
+      "说明": "RSI过滤阈值"
+    },
+    "RATIO_TRIGGER": {
+      "默认值": 1.2,
+      "范围": [1.05, 1.10, 1.15, 1.20],
+      "说明": "Ratio触发阈值"
+    },
+    "STC_SELL_ZONE": {
+      "默认值": 85,
+      "范围": [75, 80, 85, 90],
+      "说明": "STC卖出区域"
+    }
+  },
+
+  "TOP7品种最优参数": {
+    "沪镍": {
+      "EMA_FAST": 3,
+      "EMA_SLOW": 20,
+      "RSI_FILTER": 55,
+      "RATIO_TRIGGER": 1.10,
+      "STC_SELL_ZONE": 75,
+      "quality_score": 81.0
+    },
+    "纯碱": {
+      "EMA_FAST": 12,
+      "EMA_SLOW": 20,
+      "RSI_FILTER": 35,
+      "RATIO_TRIGGER": 1.05,
+      "STC_SELL_ZONE": 75,
+      "quality_score": 78.6
+    },
+    "PVC": {
+      "EMA_FAST": 3,
+      "EMA_SLOW": 25,
+      "RSI_FILTER": 55,
+      "RATIO_TRIGGER": 1.05,
+      "STC_SELL_ZONE": 75,
+      "quality_score": 78.3
+    },
+    "沪铜": {
+      "EMA_FAST": 3,
+      "EMA_SLOW": 20,
+      "RSI_FILTER": 35,
+      "RATIO_TRIGGER": 1.05,
+      "STC_SELL_ZONE": 75,
+      "quality_score": 77.0
+    },
+    "沪锡": {
+      "EMA_FAST": 3,
+      "EMA_SLOW": 10,
+      "RSI_FILTER": 35,
+      "RATIO_TRIGGER": 1.25,
+      "STC_SELL_ZONE": 75,
+      "quality_score": 76.2
+    },
+    "沪铅": {
+      "EMA_FAST": 12,
+      "EMA_SLOW": 10,
+      "RSI_FILTER": 40,
+      "RATIO_TRIGGER": 1.05,
+      "STC_SELL_ZONE": 75,
+      "quality_score": 73.3
+    },
+    "玻璃": {
+      "EMA_FAST": 12,
+      "EMA_SLOW": 10,
+      "RSI_FILTER": 35,
+      "RATIO_TRIGGER": 1.10,
+      "STC_SELL_ZONE": 75,
+      "quality_score": 71.9
+    }
+  }
+}
