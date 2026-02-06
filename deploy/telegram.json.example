@@ -1,0 +1,7 @@
+# Telegram配置模板
+# 复制此文件为 telegram.json 并填写实际值
+
+{
+  "token": "YOUR_BOT_TOKEN",
+  "chat_id": "YOUR_CHAT_ID"
+}
