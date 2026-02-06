@@ -128,6 +128,7 @@ class ChinaFuturesFetcher:
             df_60m = df_60m.set_index('datetime')
 
             # 重采样成4小时K线
+            # 使用默认的resample，会产生：00:00, 04:00, 08:00, 12:00, 16:00, 20:00
             df_4h = df_60m.resample('4h').agg({
                 'open': 'first',
                 'high': 'max',
@@ -137,9 +138,29 @@ class ChinaFuturesFetcher:
                 'hold': 'last'
             })
             df_4h = df_4h.dropna()
-
-            # 重置索引
             df_4h = df_4h.reset_index()
+
+            # 修正时间戳，对齐到实际期货交易时间
+            # 00:00 → 01:00 (夜盘收盘)
+            # 04:00 → 删除 (无交易)
+            # 08:00 → 09:00 (日盘开盘)
+            # 12:00 → 13:00 (日盘中)
+            # 16:00 → 删除 (无交易)
+            # 20:00 → 21:00 (夜盘开盘)
+            hour_map = {0: 1, 8: 9, 12: 13, 20: 21}
+            df_4h['hour'] = df_4h['datetime'].dt.hour
+            df_4h = df_4h[df_4h['hour'].isin(hour_map.keys())]
+            df_4h['hour_fixed'] = df_4h['hour'].map(hour_map)
+
+            # 重建datetime
+            df_4h['datetime'] = df_4h.apply(
+                lambda row: row['datetime'].replace(hour=int(row['hour_fixed']), minute=0, second=0),
+                axis=1
+            )
+
+            # 删除临时列
+            df_4h = df_4h.drop(columns=['hour', 'hour_fixed'])
+            df_4h = df_4h.reset_index(drop=True)
 
             # 标准化列名
             df_4h = self._standardize_columns(df_4h)

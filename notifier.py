@@ -147,10 +147,12 @@ class TelegramNotifier:
 • 止损价格: `{stop_loss:.0f}` (`{risk_pct:.2f}%`)
 • 止损金额: `{risk * position_size:.0f}` 点/手
 
-*🎯 止盈目标*
-• 第一目标: `{target_1:.0f}` (`{reward_1_pct:.2f}%`) ← 建议50%仓位
-• 第二目标: `{target_2:.0f}` (`{((target_2-entry_price)/entry_price)*100:.2f}%`) ← 建议30%仓位
-• 第三目标: `{target_3:.0f}` (`{((target_3-entry_price)/entry_price)*100:.2f}%`) ← 剩余20%
+*🎯 参考目标*
+• 第一目标: `{target_1:.0f}` (`{reward_1_pct:.2f}%`) ← 仅供参考
+• 第二目标: `{target_2:.0f}` (`{((target_2-entry_price)/entry_price)*100:.2f}%`) ← 仅供参考
+• 第三目标: `{target_3:.0f}` (`{((target_3-entry_price)/entry_price)*100:.2f}%`) ← 仅供参考
+
+⚠️ *注意：实际出场按止损/STC/趋势反转信号，一次性平仓*
 
 *📊 风险收益比*
 • 风险: `{risk:.0f}` 点 (`{risk_pct:.2f}%`)
@@ -166,7 +168,8 @@ class TelegramNotifier:
 
 ━━━━━━━━━━━━━━━━━━━━
 
-_数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}_
+_数据源: {data_source}_
+_📊 K线时间: {data_time} | 🕐 报告时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}_
 
 ---
 🤖 *沪铜策略实盘监控*
@@ -186,10 +189,9 @@ _数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %
         pnl_points = (exit_price - entry_price) * position_size
         pnl_pct = (exit_price - entry_price) / entry_price * 100
 
-        # 持仓天数
+        # 持仓天数（使用当前时间计算）
         entry_dt = datetime.fromisoformat(position['entry_datetime'])
-        signal_dt = datetime.fromisoformat(signal['datetime'])
-        days_held = (signal_dt - entry_dt).days
+        days_held = (datetime.now() - entry_dt).days
 
         # 盈亏状态
         if pnl_points > 0:
@@ -235,7 +237,7 @@ _数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %
 
 ━━━━━━━━━━━━━━━━━━━━
 
-_数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}_
+_数据源: {data_source} | 数据时间: {data_time}_
 
 ---
 🤖 *沪铜策略实盘监控*
@@ -248,13 +250,8 @@ _数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %
 
         indicators = signal['indicators']
 
-        # 提取数据时间
+        # 提取数据时间用于显示
         data_time = signal['datetime']
-        if isinstance(data_time, str):
-            # 从字符串中提取时间部分 (例如 "2026-02-04 20:00:00" -> "20:00")
-            time_part = data_time.split()[-1][:5] if ' ' in data_time else data_time[:5]
-        else:
-            time_part = data_time.strftime('%H:%M')
 
         message = f"""⚪ *市场监控更新*
 
@@ -315,7 +312,7 @@ _数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %
 
 ━━━━━━━━━━━━━━━━━━━━
 
-_数据源: {data_source}_ | _生成时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}_
+_数据源: {data_source} | 数据时间: {data_time}_
 
 ---
 🤖 *沪铜策略实盘监控*

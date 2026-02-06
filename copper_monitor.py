@@ -442,10 +442,21 @@ def run_monitoring():
             # 记录信号
             save_signal_log(signal, status='pending')
 
-            # 清空持仓（需要确认）
-            logger.info("\n[操作建议] 请确认是否卖出:")
-            logger.info(f"  1. 卖出全部仓位")
-            logger.info(f"  2. 更新持仓状态为空仓")
+            # 清空持仓状态
+            empty_position = {
+                'holding': False,
+                'entry_price': None,
+                'entry_datetime': None,
+                'position_size': 1.0,
+                'stop_loss': None,
+                'signal_id': None
+            }
+            save_position_status(empty_position)
+            logger.info("\n[自动保存] 持仓状态已清空")
+            logger.info(f"  - 持仓: 空仓")
+            logger.info(f"  - 出场价: {signal['price']:.0f}")
+            logger.info(f"  - 盈亏: {current_pnl:+.0f} 点 ({current_pnl_pct:+.2f}%)")
+            logger.info(f"\n  请手动执行交易后，确认已平仓")
 
     else:
         logger.info("当前持仓: 否")
@@ -462,9 +473,8 @@ def run_monitoring():
             logger.info(f"  1. 开仓 {signal['position_size']:.1f}x")
             logger.info(f"  2. 入场价: {signal['price']:.0f}")
             logger.info(f"  3. 止损价: {signal['stop_loss']:.0f}")
-            logger.info(f"  4. 更新持仓状态")
 
-            # 自动更新持仓状态（需要用户确认）
+            # 自动保存持仓状态
             new_position = {
                 'holding': True,
                 'entry_price': signal['price'],
@@ -473,8 +483,13 @@ def run_monitoring():
                 'stop_loss': signal['stop_loss'],
                 'signal_id': f"{signal['datetime']}_{signal.get('signal_type', 'manual')}"
             }
-            logger.info(f"\n[自动保存] 新持仓状态已准备: {new_position['signal_id']}")
-            logger.info(f"  (请手动执行交易后，更新持仓状态)")
+            save_position_status(new_position)
+            logger.info(f"\n[自动保存] 持仓状态已保存: {new_position['signal_id']}")
+            logger.info(f"  - 入场价: {new_position['entry_price']:.0f}")
+            logger.info(f"  - 入场时间: {new_position['entry_datetime']}")
+            logger.info(f"  - 仓位: {new_position['position_size']:.1f}x")
+            logger.info(f"  - 止损价: {new_position['stop_loss']:.0f}")
+            logger.info(f"\n  请手动执行交易后，确认持仓状态正确")
 
         else:
             logger.info("无买入信号，继续观望")
