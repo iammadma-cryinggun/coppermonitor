@@ -1,0 +1,40 @@
+2026-02-03 21:25:36,803 | INFO | 加载数据: 539 条, 2025-07-28 08:00:00 ~ 2026-02-03 12:00:00
+2026-02-03 21:25:36,803 | INFO | ================================================================================
+2026-02-03 21:25:36,803 | INFO | 开始网格优化
+2026-02-03 21:25:36,803 | INFO | ================================================================================
+2026-02-03 21:25:36,803 | INFO | 参数组合总数: 1,594,323
+2026-02-03 21:25:36,803 | INFO | 
+当前参数（基准）:
+2026-02-03 21:25:36,804 | INFO |   EMA_FAST: 5
+2026-02-03 21:25:36,804 | INFO |   EMA_SLOW: 15
+2026-02-03 21:25:36,804 | INFO |   MACD_FAST: 12
+2026-02-03 21:25:36,804 | INFO |   MACD_SLOW: 26
+2026-02-03 21:25:36,804 | INFO |   MACD_SIGNAL: 9
+2026-02-03 21:25:36,804 | INFO |   RSI_PERIOD: 14
+2026-02-03 21:25:36,804 | INFO |   RSI_FILTER: 45
+2026-02-03 21:25:36,804 | INFO |   RATIO_TRIGGER: 1.15
+2026-02-03 21:25:36,804 | INFO |   STC_LENGTH: 10
+2026-02-03 21:25:36,804 | INFO |   STC_FAST: 23
+2026-02-03 21:25:36,804 | INFO |   STC_SLOW: 50
+2026-02-03 21:25:36,804 | INFO |   STC_SELL_ZONE: 85
+2026-02-03 21:25:36,804 | INFO |   STOP_LOSS_PCT: 0.02
+2026-02-03 21:25:36,804 | INFO | 
+运行基准回测...
+2026-02-03 21:25:36,860 | INFO | 基准结果: 收益 35.56%, 胜率 61.5%, 盈亏比 1.46, 最大回撤 14.84%
+2026-02-03 21:25:36,860 | WARNING | 
+参数组合过多，仅优化核心参数...
+2026-02-03 21:25:36,860 | INFO | 精简后组合数: 243
+2026-02-03 21:25:36,860 | INFO | 
+开始测试 243 种参数组合...
+Traceback (most recent call last):
+  File "D:\期货数据\铜期货监控\optimize_params.py", line 417, in <module>
+    grid_optimization()
+    ~~~~~~~~~~~~~~~~~^^
+  File "D:\期货数据\铜期货监控\optimize_params.py", line 333, in grid_optimization
+    result = run_backtest(df.copy(), params)
+  File "D:\期货数据\铜期货监控\optimize_params.py", line 86, in run_backtest
+    df = calculate_indicators(df, params)
+  File "D:\期货数据\铜期货监控\optimize_params.py", line 45, in calculate_indicators
+    exp1 = df['close'].ewm(span=params['MACD_FAST'], adjust=False).mean()
+                                ~~~~~~^^^^^^^^^^^^^
+KeyError: 'MACD_FAST'

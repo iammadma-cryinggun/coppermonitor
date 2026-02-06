@@ -1,0 +1,83 @@
+{
+  "optimization_type": "full_grid_search",
+  "total_combinations": 14400,
+  "data_range": "2023-02-07 ~ 2026-02-04",
+  "data_points": 730,
+  "completed_at": "2026-02-05 11:23",
+
+  "best_return": {
+    "rank": 1,
+    "return_pct": 53.16,
+    "win_rate_pct": 59.1,
+    "trades": 22,
+    "params": {
+      "EMA_FAST": 3,
+      "EMA_SLOW": 30,
+      "RSI_FILTER": 30,
+      "RATIO_TRIGGER": 1.22,
+      "STC_SELL_ZONE": 65,
+      "STOP_LOSS_PCT": 0.02
+    }
+  },
+
+  "best_win_rate": {
+    "rank": 1,
+    "return_pct": 51.65,
+    "win_rate_pct": 72.7,
+    "trades": 11,
+    "params": {
+      "EMA_FAST": 12,
+      "EMA_SLOW": 18,
+      "RSI_FILTER": 55,
+      "RATIO_TRIGGER": 1.22,
+      "STC_SELL_ZONE": 65,
+      "STOP_LOSS_PCT": 0.02
+    }
+  },
+
+  "top20_by_return": [
+    {"rank": 1, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 30, "ratio": 1.22, "stc": 65},
+    {"rank": 2, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 30, "ratio": 1.25, "stc": 65},
+    {"rank": 3, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 35, "ratio": 1.22, "stc": 65},
+    {"rank": 4, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 35, "ratio": 1.25, "stc": 65},
+    {"rank": 5, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 40, "ratio": 1.22, "stc": 65},
+    {"rank": 6, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 40, "ratio": 1.25, "stc": 65},
+    {"rank": 7, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 45, "ratio": 1.22, "stc": 65},
+    {"rank": 8, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 45, "ratio": 1.25, "stc": 65},
+    {"rank": 9, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 50, "ratio": 1.22, "stc": 65},
+    {"rank": 10, "return": 53.16, "win_rate": 59.1, "trades": 22, "ema_fast": 3, "ema_slow": 30, "rsi": 50, "ratio": 1.25, "stc": 65},
+    {"rank": 11, "return": 52.17, "win_rate": 57.1, "trades": 21, "ema_fast": 3, "ema_slow": 30, "rsi": 30, "ratio": 1.20, "stc": 65},
+    {"rank": 12, "return": 52.17, "win_rate": 57.1, "trades": 21, "ema_fast": 3, "ema_slow": 30, "rsi": 35, "ratio": 1.20, "stc": 65},
+    {"rank": 13, "return": 52.17, "win_rate": 57.1, "trades": 21, "ema_fast": 3, "ema_slow": 30, "rsi": 40, "ratio": 1.20, "stc": 65},
+    {"rank": 14, "return": 52.17, "win_rate": 57.1, "trades": 21, "ema_fast": 3, "ema_slow": 30, "rsi": 45, "ratio": 1.20, "stc": 65},
+    {"rank": 15, "return": 52.17, "win_rate": 57.1, "trades": 21, "ema_fast": 3, "ema_slow": 30, "rsi": 50, "ratio": 1.20, "stc": 65},
+    {"rank": 16, "return": 51.65, "win_rate": 72.7, "trades": 11, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.22, "stc": 65},
+    {"rank": 17, "return": 51.65, "win_rate": 72.7, "trades": 11, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.25, "stc": 65},
+    {"rank": 18, "return": 51.48, "win_rate": 63.6, "trades": 11, "ema_fast": 10, "ema_slow": 22, "rsi": 55, "ratio": 1.22, "stc": 65},
+    {"rank": 19, "return": 51.48, "win_rate": 63.6, "trades": 11, "ema_fast": 10, "ema_slow": 22, "rsi": 55, "ratio": 1.25, "stc": 65},
+    {"rank": 20, "return": 51.33, "win_rate": 66.7, "trades": 9, "ema_fast": 10, "ema_slow": 25, "rsi": 55, "ratio": 1.22, "stc": 65}
+  ],
+
+  "top20_by_win_rate": [
+    {"rank": 1, "return": 51.65, "win_rate": 72.7, "trades": 11, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.22, "stc": 65},
+    {"rank": 2, "return": 51.65, "win_rate": 72.7, "trades": 11, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.25, "stc": 65},
+    {"rank": 3, "return": 47.04, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.18, "stc": 65},
+    {"rank": 4, "return": 50.67, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.20, "stc": 65},
+    {"rank": 5, "return": 45.58, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.22, "stc": 70},
+    {"rank": 6, "return": 45.58, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.22, "stc": 75},
+    {"rank": 7, "return": 45.58, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.22, "stc": 80},
+    {"rank": 8, "return": 45.58, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.25, "stc": 70},
+    {"rank": 9, "return": 45.58, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.25, "stc": 75},
+    {"rank": 10, "return": 45.58, "win_rate": 70.0, "trades": 10, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.25, "stc": 80},
+    {"rank": 11, "return": 45.91, "win_rate": 66.7, "trades": 15, "ema_fast": 10, "ema_slow": 18, "rsi": 55, "ratio": 1.22, "stc": 65},
+    {"rank": 12, "return": 45.91, "win_rate": 66.7, "trades": 15, "ema_fast": 10, "ema_slow": 18, "rsi": 55, "ratio": 1.25, "stc": 65},
+    {"rank": 13, "return": 35.65, "win_rate": 66.7, "trades": 6, "ema_fast": 10, "ema_slow": 25, "rsi": 55, "ratio": 1.12, "stc": 65},
+    {"rank": 14, "return": 35.65, "win_rate": 66.7, "trades": 6, "ema_fast": 10, "ema_slow": 25, "rsi": 55, "ratio": 1.12, "stc": 70},
+    {"rank": 15, "return": 35.65, "win_rate": 66.7, "trades": 6, "ema_fast": 10, "ema_slow": 25, "rsi": 55, "ratio": 1.12, "stc": 75},
+    {"rank": 16, "return": 35.65, "win_rate": 66.7, "trades": 6, "ema_fast": 10, "ema_slow": 25, "rsi": 55, "ratio": 1.12, "stc": 80},
+    {"rank": 17, "return": 51.33, "win_rate": 66.7, "trades": 9, "ema_fast": 10, "ema_slow": 25, "rsi": 55, "ratio": 1.22, "stc": 65},
+    {"rank": 18, "return": 51.33, "win_rate": 66.7, "trades": 9, "ema_fast": 10, "ema_slow": 25, "rsi": 55, "ratio": 1.25, "stc": 65},
+    {"rank": 19, "return": 35.93, "win_rate": 66.7, "trades": 9, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.12, "stc": 65},
+    {"rank": 20, "return": 35.93, "win_rate": 66.7, "trades": 9, "ema_fast": 12, "ema_slow": 18, "rsi": 55, "ratio": 1.12, "stc": 70}
+  ]
+}

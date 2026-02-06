@@ -1,0 +1,580 @@
+{
+  "best_return": {
+    "return": 500.0405999999999,
+    "win_rate": 41.37931034482759,
+    "trades": 29,
+    "capital": 600040.5999999999,
+    "params": {
+      "EMA_FAST": 3,
+      "EMA_SLOW": 15,
+      "RSI_FILTER": 30,
+      "RATIO_TRIGGER": 1.05,
+      "STC_SELL_ZONE": 65,
+      "STOP_LOSS_PCT": 0.02
+    }
+  },
+  "top20_by_return": [
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 85,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 85,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 30,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 85,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 35,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 35,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 35,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 35,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    },
+    {
+      "params": {
+        "EMA_FAST": 3,
+        "EMA_SLOW": 15,
+        "RSI_FILTER": 35,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 85,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 500.0405999999999,
+      "win_rate": 41.37931034482759,
+      "trades": 29,
+      "capital": 600040.5999999999
+    }
+  ],
+  "top20_by_win_rate": [
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 10,
+        "EMA_SLOW": 25,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.1,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.05,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 65,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 70,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 75,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    },
+    {
+      "params": {
+        "EMA_FAST": 12,
+        "EMA_SLOW": 20,
+        "RSI_FILTER": 55,
+        "RATIO_TRIGGER": 1.08,
+        "STC_SELL_ZONE": 80,
+        "STOP_LOSS_PCT": 0.02
+      },
+      "return": 34.221599999999974,
+      "win_rate": 60.0,
+      "trades": 5,
+      "capital": 134221.59999999998
+    }
+  ]
+}

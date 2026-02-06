@@ -1,0 +1,34 @@
+{
+  "test_date": "2026-02-06 12:15:37",
+  "data_range": "2016-02-15 00:00:00 ~ 2026-02-04 00:00:00",
+  "params": {
+    "EMA_FAST": 3,
+    "EMA_SLOW": 15,
+    "RSI_FILTER": 30,
+    "RATIO_TRIGGER": 1.05,
+    "STC_SELL_ZONE": 65,
+    "STOP_LOSS_PCT": 0.02
+  },
+  "results": {
+    "original": {
+      "trade_count": 108,
+      "total_return_pct": 803.7455999999997,
+      "final_capital": 903745.5999999996
+    },
+    "basic_filter": {
+      "trade_count": 107,
+      "total_return_pct": 689.5555999999997,
+      "final_capital": 789555.5999999996
+    },
+    "strict_filter": {
+      "trade_count": 1,
+      "total_return_pct": -11.976,
+      "final_capital": 88024.0
+    },
+    "smart_filter": {
+      "trade_count": 107,
+      "total_return_pct": 182.35359999999986,
+      "final_capital": 282353.59999999986
+    }
+  }
+}
