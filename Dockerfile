@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends gcc && rm -rf /
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY CCI策略系统/ ./CCI策略系统/
+COPY cci_calculations.py .
+COPY 最优参数配置.py .
 COPY paper_trade.py .
+
+RUN mkdir -p /data && chmod 777 /data
 
 CMD ["python", "paper_trade.py", "daemon"]

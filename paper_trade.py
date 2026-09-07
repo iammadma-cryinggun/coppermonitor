@@ -31,7 +31,7 @@ TP_PCT = 0.20           # 止盈 20%
 SLIPPAGE = 0.0002       # 滑点 0.02%
 COMMISSION = 0.0003     # 手续费 0.03%
 
-sys.path.insert(0, os.path.join(BASE_DIR, 'CCI策略系统'))
+# 模块与 paper_trade.py 同目录 (摊平结构, 避免中文路径/容器问题)
 from cci_calculations import calculate_stc, f_normalize
 from 最优参数配置 import OPTIMAL_PARAMS
 
