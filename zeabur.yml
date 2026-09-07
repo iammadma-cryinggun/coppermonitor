@@ -1,0 +1,11 @@
+services:
+  - name: paper-trade
+    type: worker
+    dockerfile: Dockerfile
+    volumes:
+      - /data
+    env:
+      - key: TZ
+        value: Asia/Shanghai
+      - key: DATA_DIR
+        value: /data
