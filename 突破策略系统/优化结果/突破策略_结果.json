@@ -1,0 +1,18 @@
+{
+  "strategy": "Donchian Channel Breakout",
+  "parameters": {
+    "DONCHIAN_PERIOD": 30,
+    "STOP_PERIOD": 15,
+    "ATR_PERIOD": 10,
+    "ATR_MULTIPLIER": 1.0,
+    "MAX_DRAWDOWN_PCT": 30.0
+  },
+  "results": {
+    "total_return": 55.515,
+    "max_drawdown": -20.565,
+    "total_trades": 33,
+    "win_rate": 36.36363636363637,
+    "initial_capital": 100000,
+    "final_capital": 155515.0
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "params": {
+    "donchian_period": 92,
+    "stop_period": 14,
+    "ema_period": 200,
+    "adx_threshold": 29,
+    "atr_multiplier": 2.56
+  },
+  "result": {
+    "total_trades": 14,
+    "return_pct": 51.627500000000005,
+    "max_drawdown": -17.11467101095122,
+    "win_rate": 50.0,
+    "score": 441.02282898904883
+  },
+  "optimization_time": 81.53290963172913,
+  "strategy": "Donchian Breakout with ADX & EMA Filters"
+}

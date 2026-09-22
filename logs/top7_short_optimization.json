@@ -1,0 +1,104 @@
+[
+  {
+    "code": "NI",
+    "name": "沪镍",
+    "short_params": {
+      "EMA_FAST": 5,
+      "EMA_SLOW": 20,
+      "RSI_FILTER_SHORT": 45,
+      "RATIO_TRIGGER_SHORT": 1.05,
+      "STC_BUY_ZONE": 15
+    },
+    "short_result": {
+      "return_pct": 38.56,
+      "trades": 4,
+      "win_rate": 75.0,
+      "final_capital": 69280.0
+    }
+  },
+  {
+    "code": "SA",
+    "name": "纯碱",
+    "short_params": {
+      "EMA_FAST": 7,
+      "EMA_SLOW": 20,
+      "RSI_FILTER_SHORT": 50,
+      "RATIO_TRIGGER_SHORT": 1.05,
+      "STC_BUY_ZONE": 15
+    },
+    "short_result": {
+      "return_pct": 157.0,
+      "trades": 7,
+      "win_rate": 85.7,
+      "final_capital": 128500.0
+    }
+  },
+  {
+    "code": "V",
+    "name": "PVC",
+    "short_params": {
+      "EMA_FAST": 5,
+      "EMA_SLOW": 25,
+      "RSI_FILTER_SHORT": 45,
+      "RATIO_TRIGGER_SHORT": 1.05,
+      "STC_BUY_ZONE": 15
+    },
+    "short_result": {
+      "return_pct": 9.94,
+      "trades": 4,
+      "win_rate": 50.0,
+      "final_capital": 54970.0
+    }
+  },
+  {
+    "code": "SN",
+    "name": "沪锡",
+    "short_params": {
+      "EMA_FAST": 3,
+      "EMA_SLOW": 10,
+      "RSI_FILTER_SHORT": 55,
+      "RATIO_TRIGGER_SHORT": 1.05,
+      "STC_BUY_ZONE": 15
+    },
+    "short_result": {
+      "return_pct": 5.68,
+      "trades": 8,
+      "win_rate": 62.5,
+      "final_capital": 52840.0
+    }
+  },
+  {
+    "code": "PB",
+    "name": "沪铅",
+    "short_params": {
+      "EMA_FAST": 12,
+      "EMA_SLOW": 10,
+      "RSI_FILTER_SHORT": 65,
+      "RATIO_TRIGGER_SHORT": 1.05,
+      "STC_BUY_ZONE": 20
+    },
+    "short_result": {
+      "return_pct": 12.45,
+      "trades": 10,
+      "win_rate": 50.0,
+      "final_capital": 56223.0
+    }
+  },
+  {
+    "code": "FG",
+    "name": "玻璃",
+    "short_params": {
+      "EMA_FAST": 5,
+      "EMA_SLOW": 15,
+      "RSI_FILTER_SHORT": 50,
+      "RATIO_TRIGGER_SHORT": 1.05,
+      "STC_BUY_ZONE": 15
+    },
+    "short_result": {
+      "return_pct": 41.96,
+      "trades": 9,
+      "win_rate": 55.6,
+      "final_capital": 70980.0
+    }
+  }
+]

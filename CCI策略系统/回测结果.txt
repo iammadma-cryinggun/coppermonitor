@@ -1,0 +1,44 @@
+====================================================================================================
+                                          历史数据回测系统 - 往年验证                                           
+====================================================================================================
+运行时间: 2026-02-13 17:28:58
+====================================================================================================
+
+====================================================================================================
+测试品种: sa0
+====================================================================================================
+
+====================================================================================================
+年份回测: sa0 (2020-2025)
+====================================================================================================
+
+正在回测: 2020年
+--------------------------------------------------------------------------------
+Traceback (most recent call last):
+  File "C:\Users\Martin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pandas\core\indexes\base.py", line 3812, in get_loc
+    return self._engine.get_loc(casted_key)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "pandas/_libs/index.pyx", line 167, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/index.pyx", line 196, in pandas._libs.index.IndexEngine.get_loc
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7088, in pandas._libs.hashtable.PyObjectHashTable.get_item
+  File "pandas/_libs/hashtable_class_helper.pxi", line 7096, in pandas._libs.hashtable.PyObjectHashTable.get_item
+KeyError: 'vol_ratio'
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "D:\期货数据\铜期货监控\CCI策略系统\历史数据回测_2020-2025_Final.py", line 265, in <module>
+    main()
+    ~~~~^^
+  File "D:\期货数据\铜期货监控\CCI策略系统\历史数据回测_2020-2025_Final.py", line 236, in main
+    results_df = backtest_by_year(s, start_year, end_year)
+  File "D:\期货数据\铜期货监控\CCI策略系统\历史数据回测_2020-2025_Final.py", line 177, in backtest_by_year
+    result = backtest_year(df_all, year, symbol)
+  File "D:\期货数据\铜期货监控\CCI策略系统\历史数据回测_2020-2025_Final.py", line 56, in backtest_year
+    vol = df_year['vol_ratio'].iloc[-1]
+          ~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Martin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pandas\core\frame.py", line 4113, in __getitem__
+    indexer = self.columns.get_loc(key)
+  File "C:\Users\Martin\AppData\Local\Python\pythoncore-3.14-64\Lib\site-packages\pandas\core\indexes\base.py", line 3819, in get_loc
+    raise KeyError(key) from err
+KeyError: 'vol_ratio'

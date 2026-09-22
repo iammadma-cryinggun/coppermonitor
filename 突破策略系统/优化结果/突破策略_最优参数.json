@@ -1,0 +1,16 @@
+{
+  "params": {
+    "donchian_period": 30,
+    "stop_period": 15,
+    "atr_period": 10,
+    "atr_multiplier": 1.0
+  },
+  "result": {
+    "total_trades": 33,
+    "return_pct": 55.515,
+    "max_drawdown": -20.565,
+    "score": 74.38499999999999
+  },
+  "optimization_time": 147.24733233451843,
+  "strategy": "Donchian Channel Breakout - Aggressive"
+}

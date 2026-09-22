@@ -1,0 +1,33 @@
+{
+  "params": {
+    "EMA_FAST": 12,
+    "EMA_SLOW": 10,
+    "MACD_FAST": 11,
+    "MACD_SLOW": 30,
+    "MACD_SIGNAL": 7,
+    "RSI_PERIOD": 12,
+    "RSI_FILTER": 27,
+    "RATIO_TRIGGER": 1.055,
+    "STC_LENGTH": 10,
+    "STC_FAST": 23,
+    "STC_SLOW": 47,
+    "STC_SELL_ZONE": 74
+  },
+  "result": {
+    "total_trades": 122,
+    "return_pct": 57.29302499999994,
+    "max_drawdown": -7.658075886921875,
+    "win_rate": 67.21311475409836,
+    "score": 49.26284969966479
+  },
+  "optimization_time": 709.7298111915588,
+  "method": "Bayesian Optimization - Bug Fixed Version",
+  "margin_ratio": 0.11,
+  "max_leverage": 3.0,
+  "bugs_fixed": [
+    "Removed inner loop for exit (fixed time travel)",
+    "Fixed capital ratio condition order",
+    "Fixed actual_leverage calculation",
+    "Optimized margin calculation logic"
+  ]
+}

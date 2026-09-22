@@ -1,0 +1,29 @@
+{
+  "variety": "sn",
+  "contract_size": 1,
+  "max_contracts": 1000,
+  "params": {
+    "EMA_FAST": 15,
+    "EMA_SLOW": 40,
+    "MACD_FAST": 13,
+    "MACD_SLOW": 32,
+    "MACD_SIGNAL": 9,
+    "RSI_PERIOD": 15,
+    "RSI_FILTER": 40,
+    "RATIO_TRIGGER": 1.149,
+    "STC_LENGTH": 14,
+    "STC_FAST": 28,
+    "STC_SLOW": 48,
+    "STC_SELL_ZONE": 88
+  },
+  "result": {
+    "total_trades": 50,
+    "return_pct": 60742.84919999999,
+    "max_drawdown": -28.788899865923334,
+    "score": 60685.271400268146
+  },
+  "optimization_time": 563.8674945831299,
+  "method": "Bayesian Optimization with Real Trading Rules v2",
+  "margin_ratio": 0.11,
+  "max_leverage": 3.0
+}

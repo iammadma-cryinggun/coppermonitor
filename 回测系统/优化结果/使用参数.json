@@ -1,0 +1,14 @@
+{
+  "EMA_FAST": 12,
+  "EMA_SLOW": 10,
+  "MACD_FAST": 11,
+  "MACD_SLOW": 30,
+  "MACD_SIGNAL": 7,
+  "RSI_PERIOD": 12,
+  "RSI_FILTER": 27,
+  "RATIO_TRIGGER": 1.055,
+  "STC_LENGTH": 10,
+  "STC_FAST": 23,
+  "STC_SLOW": 47,
+  "STC_SELL_ZONE": 74
+}

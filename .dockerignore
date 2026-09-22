@@ -1,0 +1,59 @@
+# Python缓存
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# 虚拟环境
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 日志文件（在容器内生成）
+logs/*.log
+logs/*.json
+logs/*.csv
+
+# 数据文件（不需要部署到容器）
+data/
+futures_data_4h/
+optimization_results_realistic/
+
+# 测试和临时文件
+*.tmp
+*.bak
+*.backup
+.pytest_cache/
+
+# Git
+.git/
+.gitignore
+
+# 文档
+*.md
+docs/
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# 备份文件
+*.bak
+*.backup
+
+# 不需要的脚本
+启动监控.bat
+test_*.py
+verify_*.py
+analyze_*.py
+backtest_*.py
+reoptimize_*.py

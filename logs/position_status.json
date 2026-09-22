@@ -1,0 +1,8 @@
+{
+  "holding": false,
+  "entry_price": null,
+  "entry_datetime": null,
+  "position_size": 1.0,
+  "stop_loss": null,
+  "signal_id": null
+}

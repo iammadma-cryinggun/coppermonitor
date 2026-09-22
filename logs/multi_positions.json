@@ -1,0 +1,72 @@
+{
+  "PTA": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "沪镍": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "棕榈油": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "纯碱": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "PVC": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "沪铜": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "豆粕": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "沪锡": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "沪铅": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  },
+  "玻璃": {
+    "holding": false,
+    "entry_price": null,
+    "entry_datetime": null,
+    "stop_loss": null,
+    "signal_id": null
+  }
+}

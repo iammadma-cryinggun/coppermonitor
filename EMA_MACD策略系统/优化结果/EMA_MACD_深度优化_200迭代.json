@@ -1,0 +1,20 @@
+{
+  "params": {
+    "ema_fast": 30,
+    "ema_slow": 46,
+    "macd_fast": 10,
+    "macd_slow": 30,
+    "macd_signal": 15,
+    "atr_multiplier": 1.5
+  },
+  "result": {
+    "return_pct": 77.96,
+    "max_drawdown": -25.55095429071575,
+    "total_trades": 19,
+    "win_rate": 21.052631578947366,
+    "avg_win": 22470.625,
+    "avg_loss": -3060.1666666666665,
+    "profit_factor": 1.9581177495779096
+  },
+  "optimization": "200 iterations"
+}

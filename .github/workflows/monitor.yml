@@ -1,0 +1,78 @@
+name: Copper Futures Monitor
+
+on:
+  # 定时运行：每4小时一次
+  schedule:
+    # 使用UTC时间，北京时间需要+8小时
+    # 00:00 UTC = 08:00 北京时间
+    # 04:00 UTC = 12:00 北京时间
+    # 08:00 UTC = 16:00 北京时间
+    # 12:00 UTC = 20:00 北京时间
+    - cron: '0 */4 * * *'
+
+  # 支持手动触发（在GitHub网页点击运行）
+  workflow_dispatch:
+
+  # 推送代码时也可以运行（可选，用于测试）
+  push:
+    branches: [ main ]
+    paths:
+      - 'copper_monitor.py'
+      - 'notifier.py'
+      - 'china_futures_fetcher.py'
+      - '.github/workflows/monitor.yml'
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pandas>=1.5.0 numpy>=1.23.0 akshare>=1.9.0 requests>=2.28.0
+
+      - name: Run copper monitor
+        env:
+          # 从GitHub Secrets读取敏感信息
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TZ: Asia/Shanghai
+        run: |
+          python copper_monitor.py
+
+      - name: Upload logs (if failed)
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: logs-${{ github.run_number }}
+          path: logs/
+          retention-days: 7
+
+      - name: Check log file
+        if: always()
+        run: |
+          if [ -f logs/strategy_monitor.log ]; then
+            echo "=== Last 50 lines of log ==="
+            tail -50 logs/strategy_monitor.log
+          fi
+
+      - name: Report status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ 监控运行成功"
+          else
+            echo "❌ 监控运行失败，请检查日志"
+          fi

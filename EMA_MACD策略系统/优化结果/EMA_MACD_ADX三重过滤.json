@@ -1,0 +1,18 @@
+{
+  "params": {
+    "ema_fast": 13,
+    "ema_slow": 27,
+    "macd_fast": 11,
+    "macd_slow": 21,
+    "macd_signal": 11,
+    "adx_threshold": 32,
+    "atr_multiplier": 1.6579955092461391
+  },
+  "result": {
+    "return_pct": 11.08,
+    "max_drawdown": -10.125030644765873,
+    "total_trades": 9,
+    "win_rate": 33.33333333333333
+  },
+  "strategy": "EMA+MACD+ADX Triple Filter"
+}
