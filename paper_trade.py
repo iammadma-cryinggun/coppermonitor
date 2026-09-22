@@ -160,9 +160,117 @@ def append_trade_log(trade):
     else:
         df.to_csv(TRADE_LOG, index=False)
 
+# ===== 交易数据库 (SQLite) =====
+# 每笔已平仓交易清晰记录: 开仓价/平仓价/盈亏/胜率 等, 落在持久卷 /data 上
+import sqlite3
+DB_FILE = os.path.join(BASE_DIR, 'paper_trade.db')
+
+def init_db():
+    """初始化平仓交易数据库 (幂等)"""
+    conn = sqlite3.connect(DB_FILE)
+    conn.execute("""CREATE TABLE IF NOT EXISTS closed_trades (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        symbol      TEXT NOT NULL,   -- 品种名 (如 铜)
+        code        TEXT,            -- 合约代码 (如 CU0)
+        direction   TEXT,            -- LONG / SHORT
+        entry_date  TEXT,            -- 开仓日期
+        entry_price REAL,            -- 开仓价格
+        exit_date   TEXT,            -- 平仓日期
+        exit_price  REAL,            -- 平仓价格
+        lots        INTEGER,         -- 手数
+        multiplier  REAL,            -- 合约乘数
+        pnl         REAL,            -- 盈亏 (正=盈利, 负=亏损)
+        pnl_pct     REAL,            -- 盈亏百分比
+        is_win      INTEGER,         -- 1=盈利 0=亏损
+        reason      TEXT,            -- 平仓原因 (SL/TP/overbought/death_cross)
+        created_at  TEXT DEFAULT (datetime('now'))
+    )""")
+    conn.commit()
+    conn.close()
+
+def record_closed_trade(trade):
+    """记录一笔已平仓交易到数据库 (按 品种+开仓日+平仓日 去重, 可重复调用)"""
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        exists = conn.execute(
+            "SELECT 1 FROM closed_trades WHERE symbol=? AND entry_date=? AND exit_date=?",
+            (trade.get('symbol'), trade.get('entry_date'), trade.get('exit_date'))
+        ).fetchone()
+        if not exists:
+            conn.execute("""INSERT INTO closed_trades
+                (symbol, code, direction, entry_date, entry_price, exit_date, exit_price,
+                 lots, multiplier, pnl, pnl_pct, is_win, reason)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                (trade.get('symbol'),
+                 WATCH_LIST.get(trade.get('symbol'), {}).get('code', ''),
+                 trade.get('side', 'LONG'),
+                 trade.get('entry_date'), trade.get('entry_price'),
+                 trade.get('exit_date'), trade.get('exit_price'),
+                 trade.get('lots'), trade.get('multiplier'),
+                 trade.get('pnl'), trade.get('pnl_pct'),
+                 1 if trade.get('pnl', 0) > 0 else 0,
+                 trade.get('reason', '')))
+            conn.commit()
+    finally:
+        conn.close()
+
+def migrate_existing_trades(state):
+    """首次运行: 将历史 JSON 中已有的平仓记录补录进数据库"""
+    init_db()
+    n = 0
+    for t in state.get('trades', []):
+        if t.get('action') == 'EXIT':
+            record_closed_trade(t)
+            n += 1
+    return n
+
+def get_db_summary():
+    """从数据库汇总: 胜率 / 总盈利 / 总亏损 / 净盈亏"""
+    conn = sqlite3.connect(DB_FILE)
+    rows = conn.execute("SELECT pnl FROM closed_trades").fetchall()
+    conn.close()
+    total = len(rows)
+    wins = sum(1 for (p,) in rows if p > 0)
+    losses = total - wins
+    win_rate = (wins / total * 100) if total else 0.0
+    total_profit = sum(p for (p,) in rows if p > 0)
+    total_loss = sum(p for (p,) in rows if p < 0)
+    return {
+        'total': total, 'wins': wins, 'losses': losses,
+        'win_rate': win_rate,
+        'total_profit': total_profit, 'total_loss': total_loss,
+        'net': total_profit + total_loss,
+    }
+
+def print_db_report():
+    """打印清晰的交易数据库记录表 + 汇总"""
+    conn = sqlite3.connect(DB_FILE)
+    rows = conn.execute(
+        "SELECT symbol, direction, entry_date, entry_price, exit_date, exit_price, "
+        "pnl, pnl_pct, is_win, reason FROM closed_trades ORDER BY exit_date"
+    ).fetchall()
+    conn.close()
+    s = get_db_summary()
+    print(f"\n{'='*78}")
+    print(f"交易数据库记录  (SQLite: {os.path.basename(DB_FILE)})")
+    print(f"{'='*78}")
+    if not rows:
+        print("  暂无平仓记录")
+    else:
+        print(f"{'品种':<6}{'方向':<6}{'开仓日期':<12}{'开仓价':>10}{'平仓日期':<12}{'平仓价':>10}{'盈亏':>11}{'盈亏%':>9}{'结果':<6}{'原因'}")
+        for symbol, direction, ed, ep, xd, xp, pnl, pct, is_win, reason in rows:
+            res = '盈利' if is_win else '亏损'
+            print(f"{symbol:<6}{direction:<6}{str(ed):<12}{float(ep):>10.0f}{str(xd):<12}{float(xp):>10.0f}{float(pnl):>+11.1f}{float(pct):>8.1f}%{res:<6}{reason}")
+    print(f"{'-'*78}")
+    print(f"胜率: {s['win_rate']:.1f}%   ({s['wins']}胜 / {s['losses']}负, 共 {s['total']} 笔平仓)")
+    print(f"总盈利: {s['total_profit']:>+14,.1f}   总亏损: {s['total_loss']:>+14,.1f}   净盈亏: {s['net']:>+14,.1f}")
+    print(f"{'='*78}")
+
 def run_daily_scan():
     """每日扫描: 检查所有品种的信号"""
     state = load_state()
+    init_db()
+    migrate_existing_trades(state)
     today = datetime.now().strftime('%Y-%m-%d')
     print(f"\n{'='*70}")
     print(f"纸面交易扫描 — {today}")
@@ -215,6 +323,7 @@ def run_daily_scan():
                 }
                 append_trade_log(trade)
                 state['trades'].append(trade)
+                record_closed_trade(trade)
                 state['equity'].append(state['balance'])
 
                 print(f"  [平仓] {exit_signal} @ {exit_price:.0f} PnL {pnl_pct*100:+.1f}%")
@@ -292,14 +401,12 @@ def run_daily_scan():
     print(f"扫描完成 — 新增交易: {new_trades} | 当前持仓: {len(state['positions'])}个")
     print(f"当前权益: {state['balance']:,.0f}")
 
-    # 统计历史交易
-    if state['trades']:
-        closes = [t for t in state['trades'] if t['action'] == 'EXIT']
-        if closes:
-            wins = sum(1 for t in closes if t['pnl'] > 0)
-            total_pnl = sum(t['pnl'] for t in closes)
-            print(f"历史: {len(closes)}笔平仓, 胜率{wins/len(closes)*100:.0f}%, "
-                  f"累计PnL {total_pnl:+,.0f}")
+    # 统计历史交易 (直接来自数据库, 清晰聚合)
+    s = get_db_summary()
+    if s['total']:
+        print(f"历史: {s['total']}笔平仓, 胜率{s['win_rate']:.1f}%, "
+              f"总盈利{s['total_profit']:+,.0f} 总亏损{s['total_loss']:+,.0f} "
+              f"净盈亏{s['net']:+,.0f}")
 
     return state
 
@@ -329,6 +436,8 @@ def show_status():
                           f"入{t['entry_price']:.0f} 出{t['exit_price']:.0f} "
                           f"PnL {t['pnl']:+,.0f}")
     print(f"{'='*70}")
+    print_db_report()
+    print(f"{'='*70}")
 
 def reset():
     """重置纸面交易"""
@@ -336,7 +445,12 @@ def reset():
         os.remove(STATE_FILE)
     if os.path.exists(TRADE_LOG):
         os.remove(TRADE_LOG)
-    print("纸面交易状态已重置")
+    if os.path.exists(DB_FILE):
+        try:
+            os.remove(DB_FILE)
+        except OSError:
+            print("  [警告] 交易数据库文件被占用, 未能删除 (下次启动会自动重建为空库)")
+    print("纸面交易状态已重置 (含交易数据库)")
 
 def run_daemon():
     """常驻模式: 工作日 15:35 自动扫描，24小时保持运行"""
@@ -370,6 +484,9 @@ if __name__ == '__main__':
             run_daily_scan()
         elif cmd == 'status':
             show_status()
+        elif cmd == 'report':
+            init_db()
+            print_db_report()
         elif cmd == 'reset':
             reset()
         elif cmd == 'daemon':
