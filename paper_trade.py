@@ -165,6 +165,28 @@ def append_trade_log(trade):
 import sqlite3
 DB_FILE = os.path.join(BASE_DIR, 'paper_trade.db')
 
+def recompute_db_pnl():
+    """幂等重算数据库内所有平仓记录的 PnL (用正确公式).
+
+    用于修正历史旧数据 (早期版本 PnL 公式错误), 每次启动调用无害。
+    """
+    conn = sqlite3.connect(DB_FILE)
+    try:
+        rows = conn.execute(
+            "SELECT id, direction, entry_price, exit_price, lots, multiplier FROM closed_trades"
+        ).fetchall()
+        for id_, direction, ep, xp, lots, mult in rows:
+            price_diff = (xp - ep) if direction == 'LONG' else (ep - xp)
+            pnl = price_diff * (mult or 1) * (lots or 1)
+            pnl_pct = (price_diff / ep * 100) if ep else 0.0
+            conn.execute(
+                "UPDATE closed_trades SET pnl=?, pnl_pct=?, is_win=? WHERE id=?",
+                (pnl, pnl_pct, 1 if pnl > 0 else 0, id_))
+        conn.commit()
+    finally:
+        conn.close()
+
+
 def init_db():
     """初始化平仓交易数据库 (幂等)"""
     conn = sqlite3.connect(DB_FILE)
@@ -187,9 +209,14 @@ def init_db():
     )""")
     conn.commit()
     conn.close()
+    recompute_db_pnl()  # 修正历史/异常 PnL 记录
 
 def record_closed_trade(trade):
-    """记录一笔已平仓交易到数据库 (按 品种+开仓日+平仓日 去重, 可重复调用)"""
+    """记录一笔已平仓交易到数据库 (按 品种+开仓日+平仓日 去重, 可重复调用)
+
+    PnL 一律用开/平仓价重算 (期货PnL=价格差×乘数×手数), 不信任调用方传入的 pnl,
+    以保证历史补录与未来平仓口径一致。
+    """
     conn = sqlite3.connect(DB_FILE)
     try:
         exists = conn.execute(
@@ -197,18 +224,26 @@ def record_closed_trade(trade):
             (trade.get('symbol'), trade.get('entry_date'), trade.get('exit_date'))
         ).fetchone()
         if not exists:
+            ep = trade.get('entry_price') or 0
+            xp = trade.get('exit_price') or 0
+            lots = trade.get('lots') or 1
+            mult = trade.get('multiplier') or 1
+            direction = trade.get('side', 'LONG')
+            price_diff = (xp - ep) if direction == 'LONG' else (ep - xp)
+            pnl = price_diff * mult * lots
+            pnl_pct = (price_diff / ep * 100) if ep else 0.0
             conn.execute("""INSERT INTO closed_trades
                 (symbol, code, direction, entry_date, entry_price, exit_date, exit_price,
                  lots, multiplier, pnl, pnl_pct, is_win, reason)
                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (trade.get('symbol'),
                  WATCH_LIST.get(trade.get('symbol'), {}).get('code', ''),
-                 trade.get('side', 'LONG'),
-                 trade.get('entry_date'), trade.get('entry_price'),
-                 trade.get('exit_date'), trade.get('exit_price'),
-                 trade.get('lots'), trade.get('multiplier'),
-                 trade.get('pnl'), trade.get('pnl_pct'),
-                 1 if trade.get('pnl', 0) > 0 else 0,
+                 direction,
+                 trade.get('entry_date'), ep,
+                 trade.get('exit_date'), xp,
+                 lots, mult,
+                 pnl, pnl_pct,
+                 1 if pnl > 0 else 0,
                  trade.get('reason', '')))
             conn.commit()
     finally:
@@ -242,8 +277,11 @@ def get_db_summary():
         'net': total_profit + total_loss,
     }
 
-def print_db_report():
-    """打印清晰的交易数据库记录表 + 汇总"""
+def print_db_report(state=None):
+    """打印清晰的交易台账: 已平仓 + 当前持仓, 开仓价一览无余
+
+    state: 可选, 传入则一并展示当前持仓(含开仓价/浮盈亏); 不传则只展示已平仓。
+    """
     conn = sqlite3.connect(DB_FILE)
     rows = conn.execute(
         "SELECT symbol, direction, entry_date, entry_price, exit_date, exit_price, "
@@ -251,20 +289,48 @@ def print_db_report():
     ).fetchall()
     conn.close()
     s = get_db_summary()
-    print(f"\n{'='*78}")
-    print(f"交易数据库记录  (SQLite: {os.path.basename(DB_FILE)})")
-    print(f"{'='*78}")
-    if not rows:
-        print("  暂无平仓记录")
-    else:
-        print(f"{'品种':<6}{'方向':<6}{'开仓日期':<12}{'开仓价':>10}{'平仓日期':<12}{'平仓价':>10}{'盈亏':>11}{'盈亏%':>9}{'结果':<6}{'原因'}")
-        for symbol, direction, ed, ep, xd, xp, pnl, pct, is_win, reason in rows:
-            res = '盈利' if is_win else '亏损'
-            print(f"{symbol:<6}{direction:<6}{str(ed):<12}{float(ep):>10.0f}{str(xd):<12}{float(xp):>10.0f}{float(pnl):>+11.1f}{float(pct):>8.1f}%{res:<6}{reason}")
-    print(f"{'-'*78}")
-    print(f"胜率: {s['win_rate']:.1f}%   ({s['wins']}胜 / {s['losses']}负, 共 {s['total']} 笔平仓)")
-    print(f"总盈利: {s['total_profit']:>+14,.1f}   总亏损: {s['total_loss']:>+14,.1f}   净盈亏: {s['net']:>+14,.1f}")
-    print(f"{'='*78}")
+
+    positions = state.get('positions', {}) if state else {}
+
+    print(f"\n{'='*94}")
+    print(f"交易台账  (SQLite: {os.path.basename(DB_FILE)})  —  已平仓 + 当前持仓")
+    print(f"{'='*94}")
+    hdr = (f"| {'品种':<5} | {'方向':<4} | {'开仓日期':<10} | {'开仓价':>10} | "
+           f"{'平/现价日期':<12} | {'平/现价':>10} | {'盈亏':>12} | {'盈亏%':>7} | {'状态':<5} | 原因")
+    print(hdr)
+    print(f"|{'-'*7}|{'-'*6}|{'-'*12}|{'-'*12}|{'-'*14}|{'-'*12}|{'-'*14}|{'-'*9}|{'-'*7}|{'-'*6}")
+    # 已平仓
+    for symbol, direction, ed, ep, xd, xp, pnl, pct, is_win, reason in rows:
+        res = '盈利' if is_win else '亏损'
+        print(f"| {symbol:<5} | {direction:<4} | {str(ed):<10} | {float(ep):>10.0f} | "
+              f"{str(xd):<12} | {float(xp):>10.0f} | {float(pnl):>+12.1f} | {float(pct):>6.1f}% | {'已平':<5} | {reason}")
+    # 当前持仓 (浮盈亏, 以最近一次扫描收盘价估算)
+    for name, pos in positions.items():
+        ep = pos.get('entry_price', 0) or 0
+        ed = pos.get('entry_date', '') or ''
+        cp = pos.get('current_price', None)
+        up = pos.get('unrealized_pnl', None)
+        upct = pos.get('unrealized_pct', None)
+        cd = pos.get('current_date', '') or datetime.now().strftime('%Y-%m-%d')
+        if cp is not None and up is not None:
+            price_col = f"{float(cp):>10.0f}"
+            pnl_col = f"{float(up):>+12.1f}"
+            pct_col = f"{float(upct):>6.1f}%"
+            reason_col = '浮盈亏'
+        else:
+            price_col = f"{'(未更新)':>10}"
+            pnl_col = f"{'--':>12}"
+            pct_col = f"{'--':>7}"
+            reason_col = '待扫描'
+        print(f"| {name:<5} | {pos.get('direction',''):<4} | {str(ed):<10} | {float(ep):>10.0f} | "
+              f"{str(cd):<12} | {price_col} | {pnl_col} | {pct_col} | {'持仓中':<5} | {reason_col}")
+    if not rows and not positions:
+        print("| (暂无记录)")
+    print(f"{'='*94}")
+    print(f"【已平仓统计】胜率: {s['win_rate']:.1f}%   ({s['wins']}胜 / {s['losses']}负, 共 {s['total']} 笔)")
+    print(f"  总盈利: {s['total_profit']:>+14,.1f}   总亏损: {s['total_loss']:>+14,.1f}   净盈亏: {s['net']:>+14,.1f}")
+    print(f"【当前持仓】{len(positions)} 个 (浮盈亏以最近一次扫描收盘价估算, 未实现, 不计入胜率)")
+    print(f"{'='*94}")
 
 def run_daily_scan():
     """每日扫描: 检查所有品种的信号"""
@@ -302,6 +368,15 @@ def run_daily_scan():
             print(f"  持仓中: 入场{pos['entry_date']} 价格{pos['entry_price']:.0f} "
                   f"方向{pos['direction']} 止损{pos['stop_loss']:.0f}")
 
+            # 记录当前价与浮盈亏 (供 report 台账展示, 无需联网)
+            current_price = df.iloc[-1]['close']
+            price_diff_c = (current_price - pos['entry_price']) if pos['direction'] == 'LONG' else (pos['entry_price'] - current_price)
+            pnl_pct_c = price_diff_c / pos['entry_price']
+            pos['current_price'] = float(current_price)
+            pos['current_date'] = today
+            pos['unrealized_pnl'] = float(price_diff_c * cfg['multiplier'] * pos['lots'])
+            pos['unrealized_pct'] = float(pnl_pct_c * 100)
+
             # 用最新bar检查出场信号
             latest_row = df.iloc[-1]
             exit_signal, exit_price = check_exit_signal(
@@ -309,8 +384,10 @@ def run_daily_scan():
 
             if exit_signal:
                 # 平仓
-                pnl_pct = (exit_price - pos['entry_price']) / pos['entry_price'] if pos['direction'] == 'LONG' else (pos['entry_price'] - exit_price) / pos['entry_price']
-                pnl = pnl_pct * cfg['multiplier'] * pos['lots']  # 简化: 1手
+                # 期货PnL = 价格差 × 合约乘数 × 手数 (LONG: 价涨盈利; SHORT: 价跌盈利)
+                price_diff = (exit_price - pos['entry_price']) if pos['direction'] == 'LONG' else (pos['entry_price'] - exit_price)
+                pnl_pct = price_diff / pos['entry_price']
+                pnl = price_diff * cfg['multiplier'] * pos['lots']
                 state['balance'] += pnl
 
                 trade = {
@@ -436,7 +513,7 @@ def show_status():
                           f"入{t['entry_price']:.0f} 出{t['exit_price']:.0f} "
                           f"PnL {t['pnl']:+,.0f}")
     print(f"{'='*70}")
-    print_db_report()
+    print_db_report(state)
     print(f"{'='*70}")
 
 def reset():
@@ -486,7 +563,7 @@ if __name__ == '__main__':
             show_status()
         elif cmd == 'report':
             init_db()
-            print_db_report()
+            print_db_report(load_state())
         elif cmd == 'reset':
             reset()
         elif cmd == 'daemon':
