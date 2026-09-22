@@ -58,15 +58,15 @@ def calculate_stc(df, length=10, fast=23, slow=50, aaa=0.5):
 
     lowest_macd = macd.rolling(window=length).min()
     highest_macd = macd.rolling(window=length).max()
-    k1 = 100 * (macd - lowest_macd) / (highest_macd - lowest_macd)
-    k1 = k1.fillna(0)
+    _denom = (highest_macd - lowest_macd).replace(0, float('nan'))
+    k1 = (100 * (macd - lowest_macd) / _denom).fillna(0)
 
     d1 = k1.ewm(span=3, adjust=False).mean()
 
     lowest_d1 = d1.rolling(window=length).min()
     highest_d1 = d1.rolling(window=length).max()
-    k2 = 100 * (d1 - lowest_d1) / (highest_d1 - lowest_d1)
-    k2 = k2.fillna(0)
+    _denom2 = (highest_d1 - lowest_d1).replace(0, float('nan'))
+    k2 = (100 * (d1 - lowest_d1) / _denom2).fillna(0)
 
     smooth_len = max(1, int(aaa * 10))
     stc = k2.ewm(span=smooth_len, adjust=False).mean()

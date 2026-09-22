@@ -31,9 +31,9 @@ TP_PCT = 0.20           # 止盈 20%
 SLIPPAGE = 0.0002       # 滑点 0.02%
 COMMISSION = 0.0003     # 手续费 0.03%
 
-# 模块与 paper_trade.py 同目录 (摊平结构, 避免中文路径/容器问题)
+# 模块与 paper_trade.py 同目录 (ASCII文件名, 兼容容器/中文路径)
 from cci_calculations import calculate_stc, f_normalize
-from 最优参数配置 import OPTIMAL_PARAMS
+from optimal_params import OPTIMAL_PARAMS
 
 import akshare as ak
 import signal

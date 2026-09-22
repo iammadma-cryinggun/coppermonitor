@@ -12,7 +12,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY cci_calculations.py .
-COPY 最优参数配置.py .
+COPY optimal_params.py .
 COPY paper_trade.py .
 
 RUN mkdir -p /data && chmod 777 /data
