@@ -9,6 +9,7 @@ venv/
 *.log
 *.csv
 *.xlsx
+logs/*.json
 *.pkl
 *.bak
 *.tmp

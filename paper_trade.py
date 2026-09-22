@@ -13,7 +13,7 @@ CCI 铜期货 纸面交易系统
 
 监控品种: 玻璃/白银/铜/铝/锡 (OOS验证通过)
 仓位: 1手起 (最小交易单位), 30%保证金上限
-入场: 信号日收盘计算 → 次日开盘价成交
+入场: 信号日收盘×(1+滑点)作为模拟入场价 (简化: 未取次日开盘)
 退出: 4%止损 / 20%止盈 / CCI超买 / CCI死叉
 """
 import pandas as pd
@@ -38,6 +38,21 @@ from optimal_params import OPTIMAL_PARAMS
 import akshare as ak
 import signal
 import time as _time
+
+# ===== 日志 (Zeabur/VictoriaLogs 友好: 输出 JSON 含 _msg, 消除 'missing _msg field' 告警) =====
+def log(msg, level="info"):
+    """输出一条 JSON 日志到 stdout, 含 Zeabur(VictoriaLogs) 需要的 _msg 字段。
+
+    纯文本 print 在 Zeabur 会被逐行报 'missing _msg field' 告警; 改用本函数后日志干净。
+    手动命令(report/status)仍用 print 保持人类可读, 不受影响。
+    """
+    try:
+        rec = {"_msg": str(msg), "level": level,
+               "ts": datetime.now().isoformat(timespec="seconds")}
+        sys.stdout.write(json.dumps(rec, ensure_ascii=False) + "\n")
+        sys.stdout.flush()
+    except Exception:
+        print(msg)
 
 # 监控品种 (OOS验证通过的)
 WATCH_LIST = {
@@ -131,7 +146,7 @@ def get_latest_data(symbol, code):
         df = df.dropna(subset=['open', 'high', 'low', 'close'])
         return df
     except Exception as e:
-        print(f"  [ERROR] {symbol} 数据获取失败: {e}")
+        log(f"  [ERROR] {symbol} 数据获取失败: {e}", level="error")
         return None
 
 def load_state():
@@ -338,21 +353,19 @@ def run_daily_scan():
     init_db()
     migrate_existing_trades(state)
     today = datetime.now().strftime('%Y-%m-%d')
-    print(f"\n{'='*70}")
-    print(f"纸面交易扫描 — {today}")
-    print(f"本金: {state['balance']:,.0f} | 当前持仓: {len(state['positions'])}个")
-    print(f"{'='*70}")
+    log(f"纸面交易扫描 — {today}")
+    log(f"本金: {state['balance']:,.0f} | 当前持仓: {len(state['positions'])}个")
 
     new_trades = 0
 
     for name, cfg in WATCH_LIST.items():
         params = OPTIMAL_PARAMS[name]
-        print(f"\n--- {name} ({cfg['code']}) ---")
+        log(f"--- {name} ({cfg['code']}) ---")
 
         # 获取数据
         df = get_latest_data(name, cfg['code'])
         if df is None or len(df) < 40:
-            print(f"  数据不足, 跳过")
+            log(f"  数据不足, 跳过")
             continue
 
         # 计算指标
@@ -365,8 +378,8 @@ def run_daily_scan():
 
         if pos:
             # --- 管理现有持仓 ---
-            print(f"  持仓中: 入场{pos['entry_date']} 价格{pos['entry_price']:.0f} "
-                  f"方向{pos['direction']} 止损{pos['stop_loss']:.0f}")
+            log(f"  持仓中: 入场{pos['entry_date']} 价格{pos['entry_price']:.0f} "
+                f"方向{pos['direction']} 止损{pos['stop_loss']:.0f}")
 
             # 记录当前价与浮盈亏 (供 report 台账展示, 无需联网)
             current_price = df.iloc[-1]['close']
@@ -403,7 +416,7 @@ def run_daily_scan():
                 record_closed_trade(trade)
                 state['equity'].append(state['balance'])
 
-                print(f"  [平仓] {exit_signal} @ {exit_price:.0f} PnL {pnl_pct*100:+.1f}%")
+                log(f"  [平仓] {exit_signal} @ {exit_price:.0f} PnL {pnl_pct*100:+.1f}%")
                 del state['positions'][name]
                 new_trades += 1
             else:
@@ -425,8 +438,8 @@ def run_daily_scan():
             latest_row['cci_ma_prev'] = prev_row['cci_ma']
 
             if check_entry_signal(latest_row, params):
-                # 入场: 次日开盘价 (今天收盘价确定信号, 明天开盘成交)
-                # 用最新bar的close作为信号确认, entry = 明天的open
+                # 入场(简化): 以信号日收盘×(1+滑点)作为模拟入场价
+                # 注: 未取次日开盘价(收盘时次日开盘未知), 此为纸面近似
                 entry_price = df.iloc[-1]['close'] * (1 + SLIPPAGE)
 
                 # 计算仓位: 30%保证金上限
@@ -460,30 +473,29 @@ def run_daily_scan():
                     state['trades'].append(trade)
                     state['equity'].append(state['balance'])
 
-                    print(f"  [入场] 信号触发! 价格{entry_price:.0f} "
-                          f"手数{lots} 止损{entry_price*(1-SL_PCT):.0f}")
+                    log(f"  [入场] 信号触发! 价格{entry_price:.0f} "
+                        f"手数{lots} 止损{entry_price*(1-SL_PCT):.0f}")
                     new_trades += 1
                 else:
                     need_pct = min(margin_per_lot / state['balance'], 1.0) * 100
-                    print(f"  [无仓位] 信号触发但保证金不足 (需要{need_pct:.0f}%保证金)")
+                    log(f"  [无仓位] 信号触发但保证金不足 (需要{need_pct:.0f}%保证金)")
             else:
-                print(f"  [等待] 无信号")
+                log(f"  [等待] 无信号")
 
     # 保存状态
     state['last_scan'] = today
     save_state(state)
 
     # 汇总
-    print(f"\n{'='*70}")
-    print(f"扫描完成 — 新增交易: {new_trades} | 当前持仓: {len(state['positions'])}个")
-    print(f"当前权益: {state['balance']:,.0f}")
+    log(f"扫描完成 — 新增交易: {new_trades} | 当前持仓: {len(state['positions'])}个")
+    log(f"当前权益: {state['balance']:,.0f}")
 
     # 统计历史交易 (直接来自数据库, 清晰聚合)
     s = get_db_summary()
     if s['total']:
-        print(f"历史: {s['total']}笔平仓, 胜率{s['win_rate']:.1f}%, "
-              f"总盈利{s['total_profit']:+,.0f} 总亏损{s['total_loss']:+,.0f} "
-              f"净盈亏{s['net']:+,.0f}")
+        log(f"历史: {s['total']}笔平仓, 胜率{s['win_rate']:.1f}%, "
+            f"总盈利{s['total_profit']:+,.0f} 总亏损{s['total_loss']:+,.0f} "
+            f"净盈亏{s['net']:+,.0f}")
 
     return state
 
@@ -530,19 +542,37 @@ def reset():
     print("纸面交易状态已重置 (含交易数据库)")
 
 def run_daemon():
-    """常驻模式: 工作日 15:35 自动扫描，24小时保持运行"""
+    """常驻模式: 工作日 15:35 自动扫描, 24小时保持运行。
+
+    启动时容错: 若当天是工作日且已过 15:35 扫描时点, 但今天尚未扫描,
+    则立即补扫一次, 避免 '15:35 之后才启动(如容器重启)' 漏掉当天扫描。
+    """
     os.makedirs(BASE_DIR, exist_ok=True)
-    print(f"[daemon] 数据目录: {BASE_DIR}")
-    print(f"[daemon] 工作日 15:35 自动扫描，Ctrl-C 退出")
+    log(f"数据目录: {BASE_DIR}")
+    log("常驻模式: 工作日 15:35 自动扫描; 若启动已过时点则补扫当日")
 
     def _scan_once():
         try:
             run_daily_scan()
         except Exception as e:
-            print(f"[daemon] 扫描异常: {e}")
+            log(f"扫描异常: {e}", level="error")
             import traceback; traceback.print_exc()
 
-    _scan_once()  # 启动先跑一次
+    now = datetime.now()
+    today = now.strftime('%Y-%m-%d')
+    state = load_state()
+    scanned_today = (state.get('last_scan') == today)
+
+    if now.weekday() < 5 and (now.hour > 15 or (now.hour == 15 and now.minute >= 35)):
+        if not scanned_today:
+            log(f"启动已过当日扫描时点(15:35), 补扫一次")
+            _scan_once()
+        else:
+            log(f"今日({today})已扫描, 进入等待下一工作日")
+    elif now.weekday() < 5 and not scanned_today:
+        log(f"启动早于15:35, 将等待今日15:35触发")
+    else:
+        log(f"今日非工作日或无需扫描, 等待下一工作日")
 
     while True:
         now = datetime.now()
