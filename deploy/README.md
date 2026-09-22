@@ -9,7 +9,6 @@
 5. ✅ **交易信号** - Sniper信号 + Chase信号
 6. ✅ **持仓管理** - 自动保存/清除持仓状态（每品种独立）
 7. ✅ **止损止盈** - 固定止损 + STC/趋势止盈
-8. ✅ **Telegram通知** - 实时推送交易信号
 
 ## 🎯 监控品种（TOP 7）
 
@@ -29,16 +28,7 @@
 pip install -r requirements.txt
 ```
 
-### 2. 配置Telegram（可选）
-
-```bash
-# 复制配置模板
-cp telegram.json.example telegram.json
-
-# 编辑telegram.json，填入你的Bot Token和Chat ID
-```
-
-### 3. 运行程序
+### 2. 运行程序
 
 ```bash
 # 单次运行
@@ -53,9 +43,7 @@ python futures_monitor.py --scheduled
 - **futures_monitor.py** - 多品种主程序（7品种监控）
 - **copper_monitor.py** - 单品种示例程序
 - **china_futures_fetcher.py** - 数据获取模块
-- **notifier.py** - Telegram通知模块
 - **requirements.txt** - Python依赖包
-- **telegram.json.example** - 配置模板
 
 ## ⏰ 定时运行
 

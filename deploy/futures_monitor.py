@@ -35,7 +35,6 @@ from typing import Dict, List, Optional
 
 # 导入本地模块
 from china_futures_fetcher import ChinaFuturesFetcher
-from notifier import get_notifier
 
 # 全局变量：优雅退出标志
 shutdown_requested = False
@@ -214,9 +213,6 @@ logger = logging.getLogger(__name__)
 
 # 数据获取器
 fetcher = ChinaFuturesFetcher()
-
-# Telegram通知器
-telegram_notifier = get_notifier()
 
 
 # ==========================================
@@ -801,99 +797,11 @@ def run_monitoring():
     except Exception as e:
         logger.error(f"保存复盘数据失败: {e}")
 
-    # Telegram推送
-    if telegram_notifier:
-        logger.info("\n[Telegram] 发送监控报告...")
-        success = send_telegram_report(all_signals, positions, buy_signals, sell_signals, active_positions)
-        if success:
-            logger.info("[Telegram] 报告发送成功")
-        else:
-            logger.warning("[Telegram] 报告发送失败")
-
     logger.info("\n" + "=" * 80)
     logger.info("监控完成")
     logger.info("=" * 80)
 
     return all_signals, positions
-
-
-# ==========================================
-# Telegram推送
-# ==========================================
-
-def send_telegram_report(all_signals, positions, buy_signals, sell_signals, active_positions):
-    """发送Telegram报告"""
-    if not telegram_notifier:
-        return False
-
-    # 获取数据源时间戳（用于诊断数据是否更新）
-    data_times = []
-    for future_name, signal in all_signals.items():
-        if 'datetime' in signal and signal['datetime']:
-            data_times.append(signal['datetime'])
-    data_time_str = data_times[0] if data_times else "N/A"
-
-    # 构建报告
-    report_lines = [
-        "📊 *期货多品种监控报告*",
-        f"🕐 报告时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-        f"📡 数据时间: {data_time_str}",  # 显示数据源时间，用于诊断数据是否更新
-        "",
-        f"📈 监控品种: {len(TOP7_FUTURES_CONFIG)}个",
-        f"💼 当前持仓: {len(active_positions)}个",
-    ]
-
-    if active_positions:
-        report_lines.append(f"   持仓: {', '.join(active_positions)}")
-
-    if buy_signals:
-        report_lines.append(f"\n🟢 *买入信号 ({len(buy_signals)}个):*")
-        for future_name in buy_signals:
-            signal = all_signals[future_name]
-            report_lines.append(f"   • {future_name}: {signal['signal_type']} @ {signal['price']:.2f}")
-
-    if sell_signals:
-        report_lines.append(f"\n🔴 *卖出信号 ({len(sell_signals)}个):*")
-        for future_name in sell_signals:
-            signal = all_signals[future_name]
-            report_lines.append(f"   • {future_name}: {signal['signal_type']} @ {signal['price']:.2f}")
-
-    # 添加各品种简要状态
-    report_lines.append(f"\n📋 *各品种状态:*")
-    for future_name, config in TOP7_FUTURES_CONFIG.items():
-        signal = all_signals.get(future_name, {})
-        position = positions.get(future_name, {})
-
-        # 获取价格
-        price = signal.get('price', 0)
-        if price > 0:
-            price_str = f"{price:.0f}"
-        else:
-            price_str = "N/A"
-
-        if 'error' in signal:
-            status = "❌ 数据错误"
-        elif position.get('holding'):
-            entry_price = position['entry_price']
-            pnl_pct = (signal['price'] - entry_price) / entry_price * 100
-            status = f"📌 持仓 {price_str} | 盈亏{pnl_pct:+.1f}%"
-        elif signal.get('buy_signal'):
-            status = f"🟢 {signal['signal_type']} @ {price_str}"
-        elif signal.get('sell_signal'):
-            status = f"🔴 {signal['signal_type']} @ {price_str}"
-        else:
-            trend_icon = "📈" if signal.get('trend') == 'up' else "📉"
-            status = f"{trend_icon} {price_str} | {signal.get('strength', 'unknown')}"
-
-        report_lines.append(f"   {future_name}: {status}")
-
-    report_text = "\n".join(report_lines)
-
-    try:
-        return telegram_notifier.send_message(report_text)
-    except Exception as e:
-        logger.error(f"[Telegram] 发送失败: {e}")
-        return False
 
 
 # ==========================================

@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 """
 ===================================
-沪铜策略 - 实盘监控与信号记录（实时数据版 + Telegram通知）
+沪铜策略 - 实盘监控与信号记录（实时数据版）
 ===================================
 
 功能:
 1. 获取最新数据（实时API + CSV备用）
 2. 运行策略生成交易信号
 3. 记录买卖建议到日志
-4. 发送Telegram通知（每4小时）
-5. 跟踪策略表现 vs 实际表现
+4. 跟踪策略表现 vs 实际表现
 
 数据源:
 - 主: ChinaFuturesFetcher (AkShare API) - 实时数据
@@ -25,7 +24,6 @@ import logging
 
 # 导入本地模块
 from china_futures_fetcher import ChinaFuturesFetcher
-from notifier import get_notifier
 
 # ==========================================
 # 配置
@@ -77,9 +75,6 @@ logger = logging.getLogger(__name__)
 
 # 数据获取器
 fetcher = ChinaFuturesFetcher()
-
-# Telegram通知器
-telegram_notifier = get_notifier()
 
 # 仓位管理参数
 def calculate_position_size(ratio, rsi):
@@ -547,17 +542,6 @@ def run_monitoring():
 
     df_tracking.to_csv(tracking_path, index=False, encoding='utf-8-sig')
     logger.info(f"\n[记录] 监控记录已保存: {TRACKING_PATH}")
-
-    # Telegram通知
-    if telegram_notifier:
-        logger.info("\n[Telegram] 发送监控报告...")
-        success = telegram_notifier.send_monitoring_report(signal, position, data_source)
-        if success:
-            logger.info("[Telegram] 报告发送成功")
-        else:
-            logger.warning("[Telegram] 报告发送失败")
-    else:
-        logger.info("\n[Telegram] 跳过通知（未配置或配置加载失败）")
 
     logger.info("\n" + "=" * 80)
     logger.info("监控完成")
